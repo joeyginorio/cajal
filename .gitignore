@@ -1,0 +1,7 @@
+# ignore local cabal build files
+*.local
+dist-newstyle/
+CHANGELOG.md
+
+# ignore latex development
+doc/
