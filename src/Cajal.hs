@@ -83,7 +83,7 @@ aconv x y (TmApp tm1 tm2)  = TmApp (aconv x y tm1) (aconv x y tm2)
 
 ---  Capture-avoiding substitution  ---
 
-type ETm = Reader [Id] Tm  -- Reader monad carries around fresh ids
+type ETm = Reader [Id] Tm
 
 subst :: Id -> Tm -> Tm -> ETm
 subst _ _ TmUnit          = return TmUnit
