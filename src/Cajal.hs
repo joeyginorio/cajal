@@ -131,8 +131,6 @@ data Err = EVar  Id      -- Variable not in context
 
 type TcTy = ReaderT Ctx (Either Err) Ty
 
----  Typing  ---
-
 find :: Id -> TcTy
 find x = do ctx <- ask
             lift $ case lookup x ctx of
