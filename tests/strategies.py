@@ -21,20 +21,25 @@ def gen_bool(ctx: Ctx, ty: Ty):
     match len(ctx):
         case 0:
             return one_of_weighted([
-                (gen_true(ctx, TyBool()), 2),
-                (gen_false(ctx, TyBool()), 2),
-                (gen_if(ctx, TyBool()), 1)
+                (gen_true(ctx, ty), 2),
+                (gen_false(ctx, ty), 2),
+                (gen_if(ctx, ty), 1)
             ])
         case 1:
-            return one_of_weighted([
-                (gen_var(ctx, TyBool()), 2),
-                (gen_if(ctx, TyBool()), 1)
-            ])
+            [(x, tyx)] = ctx.items()
+            if tyx == ty:
+                return one_of_weighted([
+                    (gen_var(ctx, ty), 3),
+                    (gen_if(ctx, ty), 1)
+                ])
+            else: 
+                return one_of_weighted([
+                    (gen_if(ctx, ty), 1)
+                ])
         case _:
             return st.one_of([
-                gen_if(ctx, TyBool())
+                gen_if(ctx, ty)
             ])
-        
 
 
 
