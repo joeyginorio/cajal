@@ -16,8 +16,8 @@ def gen_prog(ctx: Ctx, ty: Ty):
         case _:
             ...
 
-# Generate Bool programs
-def gen_bool(ctx: Ctx):
+# Generate programs of type Bool
+def gen_bool(ctx: Ctx, ty: Ty):
     match len(ctx):
         case 0:
             return one_of_weighted([
