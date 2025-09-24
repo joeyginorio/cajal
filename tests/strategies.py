@@ -10,7 +10,9 @@ from cajal.typing import *
 def gen_prog(ctx: Ctx, ty: Ty):
     match ty:
         case TyBool():
-            return gen_bool(ctx)
+            return gen_bool(ctx, ty)
+        case TyFun(_, _):
+            return gen_arrow(ctx, ty)
         case _:
             ...
 
