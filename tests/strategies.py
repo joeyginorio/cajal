@@ -41,6 +41,32 @@ def gen_bool(ctx: Ctx, ty: Ty):
                 gen_if(ctx, ty)
             ])
 
+# Generate programs of type A -> B
+def gen_arrow(ctx: Ctx, ty: Ty):
+    match len(ctx):
+        case 0:
+            return one_of_weighted([
+                (gen_fun(ctx, ty), 1),
+                (gen_if(ctx, ty), 1)
+            ])
+        case 1:
+            [(x, tyx)] = ctx.items()
+            if tyx == ty:
+                return one_of_weighted([
+                    (gen_var(ctx, ty), 4),
+                    (gen_fun(ctx, ty), 2),
+                    (gen_if(ctx, ty), 1)
+                ])
+            else:
+                return one_of_weighted([
+                    (gen_fun(ctx, ty), 3),
+                    (gen_if(ctx, ty), 1)
+                ])
+        case _:
+            return one_of_weighted([
+                (gen_fun(ctx, ty), 3),
+                (gen_if(ctx, ty), 1)
+            ])
 
 
 
