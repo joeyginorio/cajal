@@ -1,0 +1,49 @@
+from dataclasses import dataclass
+from collections.abc import Mapping
+from cajal.syntax import *
+
+# ------------------------------------- Typing ------------------------------------- #
+type Ctx = Mapping[str, Ty]
+
+def _check(tm: Tm, ctx: Ctx) -> tuple[Ty, Ctx]:
+    match tm:
+        case TmVar(x):
+            if x not in ctx:
+                raise TypeError(f"TmVar: {x} not in {ctx=}.")
+            return ctx.pop(x), ctx
+        
+        case TmTrue():
+            return TyBool(), ctx
+        
+        case TmFalse():
+            return TyBool(), ctx
+        
+        case TmFun(x, ty1, e):
+            ctx.update({x : ty1})
+            ty2, ctx_remain = _check(e, ctx)
+            return TyFun(ty1, ty2), ctx_remain
+        
+        case TmApp(e1, e2):
+            ty1, ctx_remain = _check(e1, ctx)
+
+            match ty1:
+                case TyFun(ty11, ty12):
+                    ty2, ctx_remain = _check(e2, ctx_remain)
+                    if ty11 != ty2:
+                        raise TypeError(f"TmApp: Function's input must be a {ty11}, but is a {ty2}.")
+                    return ty12, ctx_remain
+                
+                case _:
+                    raise TypeError(f"TmApp: LHS isn't a function, it's a {ty1}.")
+                
+        case TmIf(e1, e2, e3):
+            ty1, ctx_remain = _check(e1, ctx)
+            if ty1 != TyBool():
+                raise TypeError(f"TmIf: Condition not a boolean, is a {ty1}.")
+
+            ty2, ctx_remain = _check(e2, ctx_remain)
+            ty3, ctx_remain = _check(e3, ctx_remain)
+            if ty2 != ty3:
+                raise TypeError(f"TmIf: If-branch returns a {ty2}, but else-branch returns a {ty3}.")
+
+            return ty3, ctx_remain
