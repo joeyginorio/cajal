@@ -1,7 +1,7 @@
 import hypothesis.strategies as st
 from hypothesis import given, settings
-from random import randint
-from random import shuffle
+from random import randint, shuffle
+from random import seed as random_seed
 from cajal.typing import *
 
 # ---------------------------------  Programs  ------------------------------------ #
