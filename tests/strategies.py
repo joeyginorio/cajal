@@ -172,32 +172,7 @@ def one_of_weighted(gens_ws):
         lbound += w
 
 
-def debug_strategy_draw(gen, n_examples=100, timing=True):
-    examples = []
-    @settings(deadline=None, max_examples=1)
-    @given(st.data())
-    def draw_n(data):
-        exs = [data.draw(gen) for _ in range(n_examples)]
-        examples[:] = exs
-
-    if timing:
-        start = time()
-        draw_n()
-        elapsed = time() - start
-
-        print(f"Generated {n_examples} examples in {elapsed:.3f} seconds.")
-        print(f"Generation rate: {(elapsed / n_examples)*1000 :.3f} msec/example.")
-        print("------")
-        n_unique = len(set(examples))
-        print(f"Unique examples: {n_unique}.")
-        print(f"Unique generation rate: {(elapsed / n_unique)*1000 :.3f} msec/example.")
-
-    else:
-        draw_n()
-    
-    return examples
-
-def debug_strategy_example(gen, n_examples=100, timing=True):
+def debug_strategy(gen, n_examples=100, timing=True):
     examples = []
     def draw_n():
         exs = [gen.example() for _ in range(n_examples)]
