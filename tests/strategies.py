@@ -171,7 +171,22 @@ def one_of_weighted(gens_ws):
         if lbound <= n < lbound + w:
             return gen
         lbound += w
-        
+
+
+def debug_strategy(gen, n_examples=100, print=False):
+    examples = []
+
+    @settings(deadline=None, max_examples=1)
+    @given(st.data())
+    def draw_n(data):
+        exs = [data.draw(gen) for _ in range(n_examples)]
+        examples[:] = exs
+        if print:
+            for i, ex in enumerate(exs, 1):
+                print(f"Example {i}: {ex}")
+    draw_n()
+    return examples
+
 
 def unique(xs):
     unique = []
