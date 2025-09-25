@@ -4,8 +4,6 @@ from random import randint, shuffle
 from random import seed as random_seed
 from cajal.typing import *
 
-# TODO
-# - typing, hypothesis API is a good reference
 
 # ---------------------------------  Programs  ------------------------------------ #
 
