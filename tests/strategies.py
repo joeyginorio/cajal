@@ -138,7 +138,7 @@ def gen_fresh(ctx: Ctx):
 
 # Generate context split
 def split(ctx: Ctx):
-    random_seed()  # <-- This is all you need!
+    random_seed()
     xs = list(ctx.keys())
     shuffle(xs)
 
@@ -161,7 +161,7 @@ def one_of_weighted(gens_ws):
     _, ws = list(zip(*gens_ws))
     ubound = sum(ws)
 
-    random_seed()  # <-- This is all you need!
+    random_seed()
     n = randint(0, ubound-1)
 
     lbound = 0
