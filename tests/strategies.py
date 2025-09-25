@@ -183,7 +183,7 @@ def debug_strategy(gen, n_examples=100, timing=True):
         draw_n()
         elapsed = time() - start
 
-        print(f"Generated {n_examples} examples in {elapsed:.3f} seconds.")
+        print(f"Generated {n_examples} examples in {elapsed:.3f} milliseconds.")
         print(f"Generation rate: {(elapsed / n_examples)*1000 :.3f} msec/example.")
         print("------")
         n_unique = len(set(examples))
