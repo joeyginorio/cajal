@@ -194,10 +194,3 @@ def unique(xs):
         if x not in unique:
             unique.append(x)
     return unique
-
-@settings(deadline=None, max_examples=1, print_blob=True)
-@given(st.just(None))
-def test_random(x):
-    print (settings.default.derandomize)
-    random_seed()  # <-- This is all you need!
-    print(randint(0, 1000000))
