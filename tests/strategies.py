@@ -1,7 +1,6 @@
 import hypothesis.strategies as st
 from hypothesis import given, settings
-from random import randint, shuffle
-from random import seed as random_seed
+from random import randint, shuffle, seed
 from time import time
 from cajal.typing import *
 
@@ -12,62 +11,62 @@ from cajal.typing import *
 def gen_prog(ctx: Ctx, ty: Ty):
     match ty:
         case TyBool():
-            return gen_bool(ctx, ty)
+            return gen_prog_bool(ctx, ty)
         case TyFun(_, _):
-            return gen_arrow(ctx, ty)
+            return gen_prog_fun(ctx, ty)
         case _:
             ...
 
 # Generate programs of type Bool
-def gen_bool(ctx: Ctx, ty: Ty):
+def gen_prog_bool(ctx: Ctx, ty: Ty):
     match len(ctx):
         case 0:
             return one_of_weighted([
-                (gen_true(ctx, ty), 2),
-                (gen_false(ctx, ty), 2),
-                (gen_if(ctx, ty), 1)
+                (gen_tm_true(ctx, ty), 2),
+                (gen_tm_false(ctx, ty), 2),
+                (gen_tm_if(ctx, ty), 1)
             ])
         case 1:
             [(x, tyx)] = ctx.items()
             if tyx == ty:
                 return one_of_weighted([
-                    (gen_var(ctx, ty), 8),
-                    (gen_if(ctx, ty), 1)
+                    (gen_tm_var(ctx, ty), 8),
+                    (gen_tm_if(ctx, ty), 1)
                 ])
             else: 
                 return one_of_weighted([
-                    (gen_if(ctx, ty), 1)
+                    (gen_tm_if(ctx, ty), 1)
                 ])
         case _:
             return st.one_of([
-                gen_if(ctx, ty)
+                gen_tm_if(ctx, ty)
             ])
 
 # Generate programs of type A -> B
-def gen_arrow(ctx: Ctx, ty: Ty):
+def gen_prog_fun(ctx: Ctx, ty: Ty):
     match len(ctx):
         case 0:
             return one_of_weighted([
-                (gen_fun(ctx, ty), 4),
-                (gen_if(ctx, ty), 1)
+                (gen_tm_fun(ctx, ty), 4),
+                (gen_tm_if(ctx, ty), 1)
             ])
         case 1:
             [(x, tyx)] = ctx.items()
             if tyx == ty:
                 return one_of_weighted([
-                    (gen_var(ctx, ty), 8),
-                    (gen_fun(ctx, ty), 4),
-                    (gen_if(ctx, ty), 1)
+                    (gen_tm_var(ctx, ty), 8),
+                    (gen_tm_fun(ctx, ty), 4),
+                    (gen_tm_if(ctx, ty), 1)
                 ])
             else:
                 return one_of_weighted([
-                    (gen_fun(ctx, ty), 4),
-                    (gen_if(ctx, ty), 1)
+                    (gen_tm_fun(ctx, ty), 4),
+                    (gen_tm_if(ctx, ty), 1)
                 ])
         case _:
             return one_of_weighted([
-                (gen_fun(ctx, ty), 4),
-                (gen_if(ctx, ty), 1)
+                (gen_tm_fun(ctx, ty), 4),
+                (gen_tm_if(ctx, ty), 1)
             ])
 
 
@@ -90,7 +89,7 @@ def gen_ctx(draw):
 
 # ---------------------------------  Typing  --------------------------------------- #
 
-def gen_var(ctx: Ctx, ty: Ty):
+def gen_tm_var(ctx: Ctx, ty: Ty):
     assert len(ctx) == 1
     
     [(x, tyx)] = ctx.items()
@@ -99,19 +98,19 @@ def gen_var(ctx: Ctx, ty: Ty):
     return st.just(TmVar(x))
 
 
-def gen_true(ctx: Ctx, ty: Ty):
+def gen_tm_true(ctx: Ctx, ty: Ty):
     assert len(ctx) == 0 and ty == TyBool()
     return st.just(TmTrue())
 
 
-def gen_false(ctx: Ctx, ty: Ty):
+def gen_tm_false(ctx: Ctx, ty: Ty):
     assert len(ctx) == 0 and ty == TyBool()
     return st.just(TmFalse())
 
 
 # Generate if-then-else
 @st.composite
-def gen_if(draw, ctx: Ctx, ty: Ty):
+def gen_tm_if(draw, ctx: Ctx, ty: Ty):
     ctx1, ctx2 = split(ctx)
     
     tm1 = draw(gen_prog(ctx1, TyBool()))
@@ -121,12 +120,13 @@ def gen_if(draw, ctx: Ctx, ty: Ty):
 
 
 @st.composite
-def gen_fun(draw, ctx: Ctx, ty: Ty):
+def gen_tm_fun(draw, ctx: Ctx, ty: Ty):
     assert isinstance(ty, TyFun)
 
     x = draw(gen_fresh(ctx))
     tm = draw(gen_prog(ctx | {x: ty.ty1}, ty.ty2))
     return TmFun(x, ty.ty1, tm) 
+
 
 # ---------------------------------  Helpers  --------------------------------------- #
 
@@ -139,7 +139,7 @@ def gen_fresh(ctx: Ctx):
 
 # Generate context split
 def split(ctx: Ctx):
-    random_seed()
+    seed()
     xs = list(ctx.keys())
     shuffle(xs)
 
@@ -162,7 +162,7 @@ def one_of_weighted(gens_ws):
     _, ws = list(zip(*gens_ws))
     ubound = sum(ws)
 
-    random_seed()
+    seed()
     n = randint(0, ubound-1)
 
     lbound = 0
