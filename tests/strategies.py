@@ -17,30 +17,36 @@ def gen_prog(ctx: Ctx, ty: Ty):
         case _:
             ...
 
+
 # Generate programs of type Bool
 def gen_prog_bool(ctx: Ctx, ty: Ty):
     match len(ctx):
         case 0:
             return one_of_weighted([
-                (gen_tm_true(ctx, ty), 2),
-                (gen_tm_false(ctx, ty), 2),
-                (gen_tm_if(ctx, ty), 1)
+                (gen_tm_true(ctx, ty), 4),
+                (gen_tm_false(ctx, ty), 4),
+                (gen_tm_if(ctx, ty), 1),
+                (gen_tm_app(ctx, ty), 1)
             ])
         case 1:
             [(x, tyx)] = ctx.items()
             if tyx == ty:
                 return one_of_weighted([
-                    (gen_tm_var(ctx, ty), 8),
-                    (gen_tm_if(ctx, ty), 1)
+                    (gen_tm_var(ctx, ty), 2),
+                    (gen_tm_if(ctx, ty), 1),
+                    (gen_tm_app(ctx, ty), 1)
                 ])
             else: 
                 return one_of_weighted([
-                    (gen_tm_if(ctx, ty), 1)
+                    (gen_tm_if(ctx, ty), 1),
+                    (gen_tm_app(ctx, ty), 1)
                 ])
         case _:
-            return st.one_of([
-                gen_tm_if(ctx, ty)
+            return one_of_weighted([
+                (gen_tm_if(ctx, ty), 1),
+                (gen_tm_app(ctx, ty), 1)
             ])
+
 
 # Generate programs of type A -> B
 def gen_prog_fun(ctx: Ctx, ty: Ty):
@@ -48,36 +54,47 @@ def gen_prog_fun(ctx: Ctx, ty: Ty):
         case 0:
             return one_of_weighted([
                 (gen_tm_fun(ctx, ty), 4),
-                (gen_tm_if(ctx, ty), 1)
+                (gen_tm_if(ctx, ty), 1),
+                (gen_tm_app(ctx, ty), 1)
             ])
         case 1:
             [(x, tyx)] = ctx.items()
             if tyx == ty:
                 return one_of_weighted([
                     (gen_tm_var(ctx, ty), 8),
-                    (gen_tm_fun(ctx, ty), 4),
-                    (gen_tm_if(ctx, ty), 1)
+                    (gen_tm_fun(ctx, ty), 1),
+                    (gen_tm_if(ctx, ty), 1),
+                    (gen_tm_app(ctx, ty), 1)
                 ])
             else:
                 return one_of_weighted([
-                    (gen_tm_fun(ctx, ty), 4),
-                    (gen_tm_if(ctx, ty), 1)
+                    (gen_tm_if(ctx, ty), 1),
+                    (gen_tm_app(ctx, ty), 1)
                 ])
         case _:
             return one_of_weighted([
-                (gen_tm_fun(ctx, ty), 4),
-                (gen_tm_if(ctx, ty), 1)
+                (gen_tm_if(ctx, ty), 1),
+                (gen_tm_app(ctx, ty), 1)
             ])
 
 
 
 # ---------------------------------  Syntax  -------------------------------------- #
 
-# Generate types
-gen_ty = st.recursive(
-    st.builds(TyBool),
-    lambda ty: st.builds(TyFun, ty, ty)
-)
+def gen_ty():
+    return one_of_weighted([
+            (gen_ty_bool(), 4),
+            (gen_ty_fun(), 1)
+        ])
+
+def gen_ty_bool():
+    return st.just(TyBool())
+
+@st.composite
+def gen_ty_fun(draw):
+    ty1 = draw(gen_ty())
+    ty2 = draw(gen_ty())
+    return TyFun(ty1, ty2)
 
 # Generate contexts
 @st.composite
