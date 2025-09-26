@@ -145,6 +145,18 @@ def gen_tm_fun(draw, ctx: Ctx, ty: Ty):
     return TmFun(x, ty.ty1, tm) 
 
 
+@st.composite
+def gen_tm_app(draw, ctx: Ctx, ty_out: Ty):
+    ctx1, ctx2 = split(ctx)
+
+    ty_in = draw(gen_ty())  # NOTE: ty1 may blow up space, but also important to be large for higher-order
+    tm1 = draw(gen_prog(ctx1, TyFun(ty_in, ty_out)))
+    tm2 = draw(gen_prog(ctx2, ty_in))
+
+    return TmApp(tm1, tm2)
+
+
+
 # ---------------------------------  Helpers  --------------------------------------- #
 
 # Generate fresh variable names, not already in context
