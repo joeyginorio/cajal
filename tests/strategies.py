@@ -7,77 +7,35 @@ from cajal.typing import *
 
 # ---------------------------------  Programs  ------------------------------------ #
 
+type NCtx = Ctx
+type PCtx = list[tuple[str, Ty]]
+
 # Generate programs
-def gen_prog(ctx: Ctx, ty: Ty):
+def gen_prog(ctx_neg: NCtx, ctx_pos : PCtx, ty: Ty):
     match ty:
         case TyBool():
-            return gen_prog_bool(ctx, ty)
+            return gen_prog_bool(ctx_neg, ctx_pos, ty)
         case TyFun(_, _):
-            return gen_prog_fun(ctx, ty)
-        case _:
             ...
 
-
 # Generate programs of type Bool
-def gen_prog_bool(ctx: Ctx, ty: Ty):
-    match len(ctx):
-        case 0:
-            return one_of_weighted([
-                (gen_tm_true(ctx, ty), 4),
-                (gen_tm_false(ctx, ty), 4),
-                (gen_tm_if(ctx, ty), 1),
-                (gen_tm_app(ctx, ty), 1)
-            ])
-        case 1:
-            [(x, tyx)] = ctx.items()
-            if tyx == ty:
-                return one_of_weighted([
-                    (gen_tm_var(ctx, ty), 2),
-                    (gen_tm_if(ctx, ty), 1),
-                    (gen_tm_app(ctx, ty), 1)
-                ])
-            else: 
-                return one_of_weighted([
-                    (gen_tm_if(ctx, ty), 1),
-                    (gen_tm_app(ctx, ty), 1)
-                ])
-        case _:
-            return one_of_weighted([
-                (gen_tm_if(ctx, ty), 1),
-                (gen_tm_app(ctx, ty), 1)
-            ])
+def gen_prog_bool(ctx_neg: NCtx, ctx_pos: PCtx, ty_goal: Ty):
+    
+    if len(ctx_neg) == 0 and len(ctx_pos) == 0:
+        return st.one_of([gen_tm_true({}, ty_goal), gen_tm_false({}, ty_goal)])
+    
+    for (x, ty_pos) in ctx_pos:
+        match ty_pos:
+            case TyBool():
+                condition = st.just(TmVar(x))
+                then_branch = gen_prog(ctx_neg, ctx_pos[1:], ty_goal)
+                else_branch = gen_prog(ctx_neg, ctx_pos[1:], ty_goal)
+                return st.builds(TmIf, condition, then_branch, else_branch)
+            case _:
+                # TODO: Nat
+                ...
 
-
-# Generate programs of type A -> B
-def gen_prog_fun(ctx: Ctx, ty: Ty):
-    match len(ctx):
-        case 0:
-            return one_of_weighted([
-                (gen_tm_fun(ctx, ty), 4),
-                (gen_tm_if(ctx, ty), 1),
-                (gen_tm_app(ctx, ty), 1)
-            ])
-        case 1:
-            [(x, tyx)] = ctx.items()
-            if tyx == ty:
-                return one_of_weighted([
-                    (gen_tm_var(ctx, ty), 8),
-                    (gen_tm_fun(ctx, ty), 1),
-                    (gen_tm_if(ctx, ty), 1),
-                    (gen_tm_app(ctx, ty), 1)
-                ])
-            else:
-                return one_of_weighted([
-                    (gen_tm_if(ctx, ty), 1),
-                    (gen_tm_app(ctx, ty), 1)
-                ])
-        case _:
-            return one_of_weighted([
-                (gen_tm_if(ctx, ty), 1),
-                (gen_tm_app(ctx, ty), 1)
-            ])
-
-
+    # TODO: Focus on negative
 
 # ---------------------------------  Syntax  -------------------------------------- #
 
@@ -90,11 +48,9 @@ def gen_ty():
 def gen_ty_bool():
     return st.just(TyBool())
 
-@st.composite
-def gen_ty_fun(draw):
-    ty1 = draw(gen_ty())
-    ty2 = draw(gen_ty())
-    return TyFun(ty1, ty2)
+def gen_ty_fun():
+    return st.builds(TyFun, gen_ty(), gen_ty())
+
 
 # Generate contexts
 @st.composite
@@ -149,7 +105,7 @@ def gen_tm_fun(draw, ctx: Ctx, ty: Ty):
 def gen_tm_app(draw, ctx: Ctx, ty_out: Ty):
     ctx1, ctx2 = split(ctx)
 
-    ty_in = draw(gen_ty())  # NOTE: ty1 may blow up space, but also important to be large for higher-order
+    ty_in = draw(gen_ty())
     tm1 = draw(gen_prog(ctx1, TyFun(ty_in, ty_out)))
     tm2 = draw(gen_prog(ctx2, ty_in))
 
@@ -198,5 +154,25 @@ def one_of_weighted(gens_ws):
         if lbound <= n < lbound + w:
             return gen
         lbound += w
+
+# Partition a context into 'negative' and 'positive' assumptions
+def neg_pos(ctx: Ctx) -> tuple[Ctx, Ctx]:
+
+    positive_ctx = []
+    negative_ctx = {}
+    for (x, ty) in ctx.items():
+        if positive(ty):
+            positive_ctx += (x, ty)
+        if not positive(ty):
+            negative_ctx |= {x: ty}
+
+    return positive_ctx, negative_ctx
+
+def positive(ty: Ty) -> bool:
+    match ty:
+        case TyBool():
+            return True
+        case TyFun(_, _):
+            return False
 
 
