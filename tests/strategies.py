@@ -22,15 +22,15 @@ def gen_prog(ctx_neg: NCtx, ctx_pos : PCtx, ty: Ty):
 def gen_prog_bool(ctx_neg: NCtx, ctx_pos: PCtx, ty_goal: Ty):
     
     if len(ctx_neg) == 0 and len(ctx_pos) == 0:
-        return st.one_of([gen_tm_true({}, ty_goal), gen_tm_false({}, ty_goal)])
+        return st.one_of([st.just(TmTrue()), st.just(TmFalse())])
     
-    for (x, ty_pos) in ctx_pos:
+    if ctx_pos:
+        (x, ty_pos), *ctx_pos_remain = ctx_pos
         match ty_pos:
             case TyBool():
                 condition = st.just(TmVar(x))
-                then_branch = gen_prog(ctx_neg, ctx_pos[1:], ty_goal)
-                else_branch = gen_prog(ctx_neg, ctx_pos[1:], ty_goal)
-                return st.builds(TmIf, condition, then_branch, else_branch)
+                branch = gen_prog(ctx_neg, ctx_pos_remain, ty_goal)
+                return st.builds(TmIf, condition, branch, branch)
             case _:
                 # TODO: Nat
                 ...
@@ -82,14 +82,13 @@ def gen_tm_false(ctx: Ctx, ty: Ty):
 
 
 # Generate if-then-else
-@st.composite
-def gen_tm_if(draw, ctx: Ctx, ty: Ty):
+def gen_tm_if(ctx: Ctx, ty: Ty):
     ctx1, ctx2 = split(ctx)
     
-    tm1 = draw(gen_prog(ctx1, TyBool()))
-    tm2 = draw(gen_prog(ctx2, ty))
-    tm3 = draw(gen_prog(ctx2, ty))
-    return TmIf(tm1, tm2, tm3)
+    condition = gen_prog(ctx1, TyBool())
+    then_branch = gen_prog(ctx2, ty)
+    else_branch = gen_prog(ctx2, ty)
+    return st.builds(TmIf, condition, then_branch, else_branch)
 
 
 @st.composite
