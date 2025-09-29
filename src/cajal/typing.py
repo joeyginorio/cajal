@@ -10,7 +10,9 @@ def _check(tm: Tm, ctx: Ctx) -> tuple[Ty, Ctx]:
         case TmVar(x):
             if x not in ctx:
                 raise TypeError(f"TmVar: {x} not in {ctx=}.")
-            return ctx.pop(x), ctx
+            
+            ctx_remain = {y: ty for (y, ty) in ctx.items() if y != x}
+            return ctx[x], ctx_remain
         
         case TmTrue():
             return TyBool(), ctx
@@ -19,8 +21,8 @@ def _check(tm: Tm, ctx: Ctx) -> tuple[Ty, Ctx]:
             return TyBool(), ctx
         
         case TmFun(x, ty1, e):
-            ctx.update({x : ty1})
-            ty2, ctx_remain = _check(e, ctx)
+            ctx_extend = ctx | {x: ty1}
+            ty2, ctx_remain = _check(e, ctx_extend)
             return TyFun(ty1, ty2), ctx_remain
         
         case TmApp(e1, e2):
@@ -37,13 +39,15 @@ def _check(tm: Tm, ctx: Ctx) -> tuple[Ty, Ctx]:
                     raise TypeError(f"TmApp: LHS isn't a function, it's a {ty1}.")
                 
         case TmIf(e1, e2, e3):
-            ty1, ctx_remain = _check(e1, ctx)
+            ty1, ctx_remain1 = _check(e1, ctx)
             if ty1 != TyBool():
                 raise TypeError(f"TmIf: Condition not a boolean, is a {ty1}.")
 
-            ty2, ctx_remain = _check(e2, ctx_remain)
-            ty3, ctx_remain = _check(e3, ctx_remain)
+            ty2, ctx_remain2 = _check(e2, ctx_remain1)
+            ty3, ctx_remain3 = _check(e3, ctx_remain1)
             if ty2 != ty3:
                 raise TypeError(f"TmIf: If-branch returns a {ty2}, but else-branch returns a {ty3}.")
+            if ctx_remain2 != ctx_remain3:
+                raise TypeError(f"TmIf: If-branch leaves {ctx_remain2=}, but else-branch leaves {ctx_remain3=}.")
 
-            return ty3, ctx_remain
+            return ty3, ctx_remain3
