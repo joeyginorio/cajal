@@ -1,5 +1,5 @@
 import hypothesis.strategies as st
-from hypothesis import given, settings
+from hypothesis import given, settings, HealthCheck
 from random import randint, shuffle, seed
 from time import time
 from cajal.typing import *
@@ -67,7 +67,13 @@ def gen_prog_bool(draw, ctx_neg: NCtx, ctx_pos: PCtx):
 def gen_prog_fun(draw, ctx_neg: NCtx, ctx_pos: PCtx, ty_in: Ty, ty_out: Ty):
 
     if positive(ty_in):
-        name = draw(gen_fresh(ctx_pos))
+        names_neg = []
+        for x, _ in ctx_neg:
+            if isinstance(x, str):
+                names_neg += [x]
+            else: 
+                names_neg += tm_names(x)
+        name = gen_fresh(ctx_pos + names_neg)
         ctx_pos = [(name, ty_in)] + ctx_pos
         body = draw(gen_prog_ty(ctx_neg, ctx_pos, ty_out))
         return TmFun(name, ty_in, body)
@@ -79,7 +85,7 @@ def gen_prog_fun(draw, ctx_neg: NCtx, ctx_pos: PCtx, ty_in: Ty, ty_out: Ty):
                 names_neg += [x]
             else: 
                 names_neg += tm_names(x)
-        name = draw(gen_fresh(names_neg))
+        name = gen_fresh(ctx_pos + names_neg)
         ctx_neg = [(TmVar(name), ty_in)] + ctx_neg
         body = draw(gen_prog_ty(ctx_neg, ctx_pos, ty_out))
         return TmFun(name, ty_in, body)
@@ -103,8 +109,15 @@ def gen_ty_fun(draw):
 # Generate contexts
 @st.composite
 def gen_ctx(draw):
-    xs = draw(st.lists(gen_fresh({}), max_size=8))
-    tys = draw(st.lists(gen_ty(), max_size=8))
+    max_size = randint(0,8)
+
+    xs = []
+    tys = []
+    for i in range(max_size):
+        x = gen_fresh(xs)
+        xs.append(x)
+        tys.append(draw(gen_ty()))
+
     return list(zip(xs,tys))
 
 
@@ -117,7 +130,6 @@ def gen_tm_var(ctx: Ctx, ty: Ty):
     assert tyx == ty
     
     return st.just(TmVar(x))
-
 
 def gen_tm_true(ctx: Ctx, ty: Ty):
     assert len(ctx) == 0 and ty == TyBool()
@@ -143,7 +155,7 @@ def gen_tm_if(ctx: Ctx, ty: Ty):
 def gen_tm_fun(draw, ctx: Ctx, ty: Ty):
     assert isinstance(ty, TyFun)
 
-    x = draw(gen_fresh(ctx))
+    x = gen_fresh(ctx)
     tm = draw(gen_prog_ty(ctx | {x: ty.ty1}, ty.ty2))
     return TmFun(x, ty.ty1, tm) 
 
@@ -181,9 +193,12 @@ def tm_names(tm: Tm) -> list[str]:
 
 # Generate fresh variable names, not already in context
 def gen_fresh(ctx: Ctx):
-    condition = lambda x : x not in ctx
-    names = st.integers(min_value=0).map(lambda n : f"#x{n}")
-    return names.filter(condition)
+    n = randint(0,1000000000)
+    
+    if f"#x{n}" not in ctx:
+        return f"x{n}"
+    
+    return gen_fresh(ctx)
 
 
 # Generate context split
