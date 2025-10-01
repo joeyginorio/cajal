@@ -122,57 +122,6 @@ def gen_ctx(draw):
     return list(zip(xs,tys))
 
 
-# ---------------------------------  Typing  --------------------------------------- #
-
-def gen_tm_var(ctx: Ctx, ty: Ty):
-    assert len(ctx) == 1
-    
-    [(x, tyx)] = ctx.items()
-    assert tyx == ty
-    
-    return st.just(TmVar(x))
-
-def gen_tm_true(ctx: Ctx, ty: Ty):
-    assert len(ctx) == 0 and ty == TyBool()
-    return st.just(TmTrue())
-
-
-def gen_tm_false(ctx: Ctx, ty: Ty):
-    assert len(ctx) == 0 and ty == TyBool()
-    return st.just(TmFalse())
-
-
-# Generate if-then-else
-def gen_tm_if(ctx: Ctx, ty: Ty):
-    ctx1, ctx2 = split(ctx)
-    
-    condition = gen_prog_ty(ctx1, TyBool())
-    then_branch = gen_prog_ty(ctx2, ty)
-    else_branch = gen_prog_ty(ctx2, ty)
-    return st.builds(TmIf, condition, then_branch, else_branch)
-
-
-@st.composite
-def gen_tm_fun(draw, ctx: Ctx, ty: Ty):
-    assert isinstance(ty, TyFun)
-
-    x = gen_fresh(ctx)
-    tm = draw(gen_prog_ty(ctx | {x: ty.ty1}, ty.ty2))
-    return TmFun(x, ty.ty1, tm) 
-
-
-@st.composite
-def gen_tm_app(draw, ctx: Ctx, ty_out: Ty):
-    ctx1, ctx2 = split(ctx)
-
-    ty_in = draw(gen_ty())
-    tm1 = draw(gen_prog_ty(ctx1, TyFun(ty_in, ty_out)))
-    tm2 = draw(gen_prog_ty(ctx2, ty_in))
-
-    return TmApp(tm1, tm2)
-
-
-
 # ---------------------------------  Helpers  --------------------------------------- #
 
 def tm_names(tm: Tm) -> list[str]:
@@ -199,26 +148,6 @@ def gen_fresh(ctx: Ctx):
         return f"x{n}"
     
     return gen_fresh(ctx)
-
-
-# Generate context split
-def split(ctx: Ctx):
-
-    xs = list(ctx.keys())
-    shuffle(xs)
-
-    if len(xs) <= 1:
-        split_idx = 0
-    else:
-        split_idx = randint(1, len(xs)-1)
-        
-    xs1 = xs[:split_idx]
-    xs2 = xs[split_idx:]
-
-    ctx1 = {x1: ctx[x1] for x1 in xs1}
-    ctx2 = {x2: ctx[x2] for x2 in xs2}
-
-    return ctx1, ctx2
 
 
 def one_of_weighted(gens_ws):
