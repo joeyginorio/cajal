@@ -110,7 +110,7 @@ def gen_ty_fun(draw):
 # Generate contexts
 @st.composite
 def gen_ctx(draw):
-    max_size = randint(0,1)
+    max_size = randint(0,6)
 
     xs = []
     tys = []
