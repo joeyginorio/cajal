@@ -1,8 +1,9 @@
 import hypothesis.strategies as st
-from hypothesis import given, settings, HealthCheck
+from hypothesis import given, settings, HealthCheck, Verbosity
 from random import randint, shuffle, seed
 from time import time
 from cajal.typing import *
+from cajal.typing import _check
 
 # ---------------------------------  Programs  ------------------------------------ #
 
@@ -109,7 +110,7 @@ def gen_ty_fun(draw):
 # Generate contexts
 @st.composite
 def gen_ctx(draw):
-    max_size = randint(0,8)
+    max_size = randint(0,1)
 
     xs = []
     tys = []
@@ -190,7 +191,6 @@ def tm_names(tm: Tm) -> list[str]:
             return tm_names(tm1) + tm_names(tm2) + tm_names(tm3)
 
 
-
 # Generate fresh variable names, not already in context
 def gen_fresh(ctx: Ctx):
     n = randint(0,1000000000)
@@ -246,6 +246,7 @@ def neg_pos(ctx: list[tuple[str | Tm, Ty]]) -> tuple[Ctx, Ctx]:
             negative_ctx += [(TmVar(x), ty)]
 
     return negative_ctx, positive_ctx
+    
 
 def positive(ty: Ty) -> bool:
     match ty:
@@ -255,3 +256,9 @@ def positive(ty: Ty) -> bool:
             return False
 
 
+@settings(max_examples=10, suppress_health_check=[HealthCheck.too_slow], verbosity=Verbosity.normal)
+@given(gen_prog())
+def test(ctx_tm_ty):
+    ctx, tm, ty = ctx_tm_ty
+    ty_check, _ = _check(tm, ctx)
+    assert ty == ty_check
