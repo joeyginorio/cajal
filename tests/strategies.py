@@ -124,6 +124,32 @@ def gen_ctx(draw):
 
 # ---------------------------------  Helpers  --------------------------------------- #
 
+
+def capture_subst(tm: Tm, x: str, v: Tm) -> Tm:
+    match tm:
+        case TmVar(y):
+            if x == y:
+                return v
+            else:
+                return TmVar(y)
+        case TmTrue():
+            return TmTrue()
+        case TmFalse():
+            return TmFalse()
+        case TmFun(y, ty, tm_body):
+            tm_subst = capture_subst(tm_body, x, v)
+            return TmFun(y, ty, tm_subst)
+        case TmApp(tm1, tm2):
+            tm1_subst = capture_subst(tm1, x, v)
+            tm2_subst = capture_subst(tm2, x, v)
+            return TmApp(tm1_subst, tm2_subst)
+        case TmIf(tm1, tm2, tm3):
+            tm1_subst = capture_subst(tm1, x, v)
+            tm2_subst = capture_subst(tm2, x, v)
+            tm3_subst = capture_subst(tm3, x, v)
+            return TmIf(tm1_subst, tm2_subst, tm3_subst)
+
+
 def tm_names(tm: Tm) -> list[str]:
     match tm:
         case TmVar(x):
