@@ -10,4 +10,3 @@ def test_eval(ctx_tm_ty):
     v = evaluate(tm, {})
     ty_val = check_val(v)
     assert ty_term == ty_val
-
