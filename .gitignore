@@ -1,6 +1,7 @@
 .vscode/
 .hypothesis/
 .venv/
+.pytest_cache/
 data/*.csv
 data/*.pt
 .DS_Store
