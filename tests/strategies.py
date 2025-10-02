@@ -3,12 +3,22 @@ from hypothesis import given, settings, HealthCheck, Verbosity
 from random import randint, shuffle, seed
 from time import time
 from cajal.typing import *
-from cajal.typing import _check
+from cajal.evaluating import *
 
 # ---------------------------------  Programs  ------------------------------------ #
 
 type NCtx = list[tuple[Tm, Ty]]
 type PCtx = list[tuple[str, Ty]]
+
+@st.composite
+def gen_closed_prog(draw):
+    ctx, tm, ty_goal = draw(gen_prog())
+    for (x, ty) in ctx.items():
+        v = draw(gen_prog_ty([], [], ty))
+        tm = capture_subst(tm, x, v)
+    ty = check(tm, {})
+    assert ty == ty_goal
+    return {}, tm, ty
 
 @st.composite
 def gen_prog(draw):
@@ -20,7 +30,7 @@ def gen_prog(draw):
     return dict(ctx), tm, ty
 
 
-# Generate programs
+# Generate programs 
 def gen_prog_ty(ctx_neg: NCtx, ctx_pos : PCtx, ty: Ty):
     match ty:
         case TyBool():
