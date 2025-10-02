@@ -10,21 +10,21 @@ def _check(tm: Tm, ctx: Ctx) -> tuple[Ty, Ctx]:
         case TmVar(x):
             if x not in ctx:
                 raise TypeError(f"TmVar: {x} not in {ctx=}.")
-            
+
             ctx_remain = {y: ty for (y, ty) in ctx.items() if y != x}
             return ctx[x], ctx_remain
-        
+
         case TmTrue():
             return TyBool(), ctx
-        
+
         case TmFalse():
             return TyBool(), ctx
-        
+
         case TmFun(x, ty1, e):
             ctx_extend = ctx | {x: ty1}
             ty2, ctx_remain = _check(e, ctx_extend)
             return TyFun(ty1, ty2), ctx_remain
-        
+
         case TmApp(e1, e2):
             ty1, ctx_remain = _check(e1, ctx)
 
@@ -51,3 +51,20 @@ def _check(tm: Tm, ctx: Ctx) -> tuple[Ty, Ctx]:
                 raise TypeError(f"TmIf: If-branch leaves {ctx_remain2=}, but else-branch leaves {ctx_remain3=}.")
 
             return ty3, ctx_remain3
+
+def check(tm: Tm, ctx: Ctx) -> Ty:
+    ty, ctx_remain = _check(tm, ctx)
+    if ctx_remain:
+        raise TypeError(f"check: Some context remains {ctx_remain=}, when checking {tm} with {ctx}.")
+    return ty
+
+def check_val(val: Val) -> Ty:
+    match val:
+        case VTrue():
+            return TyBool()
+        case VFalse():
+            return TyBool()
+        case VClosure(x, ty, tm, c_env):
+            ctx = {y: ty_y for (y, (_, ty_y)) in c_env.items()}
+            ctx |= {x: ty}
+            return TyFun(ty, check(tm, ctx))
