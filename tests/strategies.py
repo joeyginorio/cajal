@@ -124,7 +124,10 @@ def gen_prog_fun(draw, ctx_neg: NCtx, ctx_pos: PCtx, ty_in: Ty, ty_out: Ty):
 
 @st.composite
 def gen_ty(draw):
-    return draw(st.one_of(gen_ty_bool(), gen_ty_fun()))
+    return draw(one_of_weighted([
+                    (gen_ty_bool(),3), 
+                    (gen_ty_fun(), 1)
+                ]))
 
 def gen_ty_bool():
     return st.just(TyBool())
