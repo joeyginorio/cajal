@@ -1,6 +1,6 @@
 from cajal.syntax import *
 
-def evaluate(tm: Ty, env: Env) -> Val:
+def evaluate(tm: Tm, env: Env) -> Val:
     match tm:
         case TmVar(x):
             v, _ = env[x]
