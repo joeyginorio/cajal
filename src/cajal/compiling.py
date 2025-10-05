@@ -8,9 +8,9 @@ def compile(tm: Tm, env):
         case TmVar(x):
             return env[x]
         case TmTrue():
-            return tensor([1,0])
+            return tensor([1.,0.])
         case TmFalse():
-            return tensor([0,1])
+            return tensor([0.,1.])
         case TmIf(tm1, tm2, tm3):
             b = compile(tm1, env)
             branch_if = compile(tm2, env)
@@ -27,9 +27,9 @@ def compile(tm: Tm, env):
 def compile_val(v: Val):
     match v:
         case VTrue():
-            return tensor([1,0])
+            return tensor([1.,0.])
         case VFalse():
-            return tensor([0,1])
+            return tensor([0.,1.])
         case VClosure(x, ty, tm, src_env):
             tgt_env = {y: compile_val(val_y) for y, val_y in src_env.items()}
             return lambda arg, env=tgt_env: compile(tm, tgt_env | {x: arg})
