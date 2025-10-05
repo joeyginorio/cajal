@@ -59,6 +59,15 @@ def gen_prog_observable(draw):
     tm = draw(gen_prog_ty(ctx_neg, ctx_pos, TyBool()))
     return dict(ctx), tm, TyBool()
 
+@st.composite
+def gen_prog_observable_containing(draw, ctx_det: Ctx):
+    ctx = draw(gen_ctx())
+    ctx = ctx + list(ctx_det.items())
+    ctx_neg, ctx_pos = neg_pos(ctx)
+
+    tm = draw(gen_prog_ty(ctx_neg, ctx_pos, TyBool()))
+    return dict(ctx), tm, TyBool()
+
 # Generate programs 
 def gen_prog_ty(ctx_neg: NCtx, ctx_pos : PCtx, ty: Ty):
     match ty:
