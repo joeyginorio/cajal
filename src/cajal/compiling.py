@@ -22,3 +22,14 @@ def compile(tm: Tm, env):
             f_closure = compile(tm1, env)
             arg = compile(tm2, env)
             return f_closure(arg)
+
+
+def compile_val(v: Val):
+    match v:
+        case VTrue():
+            return tensor([1,0])
+        case VFalse():
+            return tensor([0,1])
+        case VClosure(x, ty, tm, src_env):
+            tgt_env = {y: compile_val(val_y) for y, val_y in src_env.items()}
+            return lambda arg, env=tgt_env: compile(tm, tgt_env | {x: arg})
