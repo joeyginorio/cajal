@@ -29,6 +29,24 @@ def gen_prog(draw):
     tm = draw(gen_prog_ty(ctx_neg, ctx_pos, ty))
     return dict(ctx), tm, ty
 
+@st.composite
+def gen_closed_prog_observable(draw):
+    ctx, tm, ty_goal = draw(gen_prog_observable())
+    for (x, ty) in ctx.items():
+        v = draw(gen_prog_ty([], [], ty))
+        tm = capture_subst(tm, x, v)
+    ty = check(tm, {})
+    assert ty == ty_goal
+    return {}, tm, ty
+
+
+@st.composite
+def gen_prog_observable(draw):
+    ctx = draw(gen_ctx())
+    ctx_neg, ctx_pos = neg_pos(ctx)
+
+    tm = draw(gen_prog_ty(ctx_neg, ctx_pos, TyBool()))
+    return dict(ctx), tm, TyBool()
 
 # Generate programs 
 def gen_prog_ty(ctx_neg: NCtx, ctx_pos : PCtx, ty: Ty):
