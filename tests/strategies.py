@@ -39,6 +39,17 @@ def gen_closed_prog_observable(draw):
     assert ty == ty_goal
     return {}, tm, ty
 
+@st.composite
+def gen_closed_prog_observable_except(draw, ctx_det: Ctx):
+    ctx, tm, ty_goal = draw(gen_prog_observable_containing(ctx_det))
+    for (x, ty) in ctx.items():
+        if x not in ctx_det:
+            v = draw(gen_prog_ty([], [], ty))
+            tm = capture_subst(tm, x, v)
+    ty = check(tm, ctx_det)
+    assert ty == ty_goal
+    return ctx_det, tm, ty
+
 
 @st.composite
 def gen_prog_observable(draw):
