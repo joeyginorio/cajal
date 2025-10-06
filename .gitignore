@@ -8,3 +8,21 @@ data/*.pt
 __pycache__/
 *.egg-info/
 
+data/MNIST/raw/t10k-images-idx3-ubyte
+data/MNIST/raw/t10k-images-idx3-ubyte.gz
+data/MNIST/raw/t10k-labels-idx1-ubyte
+data/MNIST/raw/t10k-labels-idx1-ubyte.gz
+data/MNIST/raw/train-images-idx3-ubyte
+data/MNIST/raw/train-images-idx3-ubyte.gz
+data/MNIST/raw/train-labels-idx1-ubyte
+data/MNIST/raw/train-labels-idx1-ubyte.gz
+experiments/and/data/test_and_xs1.pt
+experiments/and/data/test_and_xs2.pt
+experiments/and/data/test_and_ys.pt
+experiments/and/data/train_and_xs1.pt
+experiments/and/data/train_and_xs2.pt
+experiments/and/data/train_and_ys.pt
+experiments/and/figures/and_acc_global.pdf
+experiments/and/data/direct_and_acc_test.csv
+experiments/and/data/direct_and_loss_test.csv
+experiments/and/data/direct_and_loss_train.csv
