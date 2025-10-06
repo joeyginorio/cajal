@@ -21,7 +21,7 @@ def test_compiler_correctness(ctx_tm_ty):
     assert all(compiled_tm == compiled_v)
 
 @settings(max_examples=100, 
-          suppress_health_check=[HealthCheck.too_slow], 
+          suppress_health_check=[HealthCheck.too_slow],
           verbosity=Verbosity.normal,
           deadline=None)
 @given(gen_closed_prog_observable_except({'x': TyBool()}))
