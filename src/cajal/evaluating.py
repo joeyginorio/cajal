@@ -3,7 +3,7 @@ from cajal.syntax import *
 def evaluate(tm: Tm, env: Env) -> Val:
     match tm:
         case TmVar(x):
-            v, _ = env[x]
+            v = env[x]
             return v
         case TmTrue():
             return VTrue()
