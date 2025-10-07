@@ -88,6 +88,10 @@ def check_val(val: Val) -> Ty:
             return TyBool()
         case VFalse():
             return TyBool()
+        case VZero():
+            return TyNat()
+        case VSucc(v):
+            return check_val(v)
         case VClosure(x, ty, tm, c_env):
             ctx = {y: check_val(tm_y) for (y, tm_y) in c_env.items()}
             ctx |= {x: ty}
