@@ -3,10 +3,16 @@ from collections.abc import Mapping
 
 # ------------------------------------- Types ------------------------------------- #
 
-type Ty = TyBool | TyFun
+type Ty = (  TyBool
+           | TyNat
+           | TyFun
+           )
 
 @dataclass
 class TyBool: ...
+
+@dataclass
+class TyNat: ...
 
 @dataclass
 class TyFun: 
@@ -15,7 +21,15 @@ class TyFun:
 
 # ------------------------------------- Terms ------------------------------------- #
 
-type Tm = TmVar | TmTrue | TmFalse | TmIf | TmFun | TmApp
+type Tm = (  TmVar
+           | TmTrue 
+           | TmFalse 
+           | TmZero 
+           | TmSucc 
+           | TmIf 
+           | TmFun
+           | TmApp
+           )
 
 @dataclass
 class TmVar:
@@ -26,6 +40,20 @@ class TmTrue: ...
 
 @dataclass
 class TmFalse: ...
+
+@dataclass
+class TmZero: ...
+
+@dataclass
+class TmSucc:
+    tm: Tm
+
+@dataclass
+class TmIter:
+    tm1: Tm
+    name2: str
+    tm2: Tm
+    tm3: Tm
 
 @dataclass
 class TmIf:
@@ -47,13 +75,25 @@ class TmApp:
 
 # ------------------------------------- Values ------------------------------------- #
 
-type Val = VTrue | VFalse | VClosure
+type Val = (  VTrue 
+            | VFalse
+            | VZero
+            | VSucc
+            | VClosure
+            )
 
 @dataclass
 class VTrue: ...
 
 @dataclass
 class VFalse: ...
+
+@dataclass
+class VZero: ...
+
+@dataclass
+class VSucc:
+    v: Val
 
 type Env = Mapping[str, tuple[Val, Ty]]
 
