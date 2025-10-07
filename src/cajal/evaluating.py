@@ -19,7 +19,7 @@ def evaluate(tm: Tm, env: Env) -> Val:
                 case VFalse():
                     return evaluate(tm3, env)
                 case _:
-                    raise TypError(f"TmIf: {tm1=} doesn't evaluate to a boolean, {v1=}.")
+                    raise TypeError(f"TmIf: {tm1=} doesn't evaluate to a boolean, {v1=}.")
         case TmApp(tm1, tm2):
             v1 = evaluate(tm1, env)
             v2 = evaluate(tm2, env)
