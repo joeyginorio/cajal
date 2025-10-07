@@ -19,11 +19,32 @@ def _check(tm: Tm, ctx: Ctx) -> tuple[Ty, Ctx]:
 
         case TmFalse():
             return TyBool(), ctx
+        
+        case TmZero():
+            return TyNat(), ctx
+    
+        case TmSucc(tm):
+            ty, ctx_remain = _check(tm, ctx)
+            match ty:
+                case TyNat():
+                    return TyNat(), ctx_remain
+                case _:
+                    raise TypeError(f"TmSucc: Successor not applied to a Nat, {tm=} is a {ty=}.")
 
         case TmFun(x, ty1, e):
             ctx_extend = ctx | {x: ty1}
             ty2, ctx_remain = _check(e, ctx_extend)
             return TyFun(ty1, ty2), ctx_remain
+
+        case TmIter(e1, y, e2, e3):
+            ty3, ctx_remain3 = _check(e3, ctx)
+            match ty3:
+                case TyNat():
+                    ty1, ctx_remain1 = _check(e1, ctx_remain3)
+                    ty2, ctx_remain2 = _check(e2, ctx_remain1 | {y: ty1})
+                    return ty2, ctx_remain2
+                case _:
+                    raise TypeError(f"TmIter: Iter not applied to a Nat, {tm3=} is a {ty3=}.")
 
         case TmApp(e1, e2):
             ty1, ctx_remain = _check(e1, ctx)
@@ -65,6 +86,6 @@ def check_val(val: Val) -> Ty:
         case VFalse():
             return TyBool()
         case VClosure(x, ty, tm, c_env):
-            ctx = {y: ty_y for (y, (_, ty_y)) in c_env.items()}
+            ctx = {y: check_val(tm_y) for (y, tm_y) in c_env.items()}
             ctx |= {x: ty}
             return TyFun(ty, check(tm, ctx))
