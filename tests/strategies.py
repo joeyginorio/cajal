@@ -25,7 +25,7 @@ def gen_prog(draw):
     ctx = draw(gen_ctx())
     ctx_neg, ctx_pos = neg_pos(ctx)
 
-    ty = draw(gen_ty()) 
+    ty = draw(gen_ty())
     tm = draw(gen_prog_ty(ctx_neg, ctx_pos, ty))
     return dict(ctx), tm, ty
 
@@ -73,6 +73,8 @@ def gen_prog_ty(ctx_neg: NCtx, ctx_pos : PCtx, ty: Ty):
     match ty:
         case TyBool():
             return gen_prog_bool(ctx_neg, ctx_pos)
+        case TyNat():
+            return gen_prog_nat(ctx_neg, ctx_pos)
         case TyFun(ty1, ty2):
             return gen_prog_fun(ctx_neg, ctx_pos, ty1, ty2)
 
@@ -88,9 +90,26 @@ def gen_prog_bool(draw, ctx_neg: NCtx, ctx_pos: PCtx):
                 then_branch = draw(gen_prog_bool(ctx_neg, ctx_pos_remain))
                 else_branch = draw(gen_prog_bool(ctx_neg, ctx_pos_remain))
                 return TmIf(condition, then_branch, else_branch)
-            case _:
-                # TODO: Nat
-                ...
+            case TyNat():
+                n = TmVar(x) if isinstance(x, str) else x
+
+                ctx_neg1, ctx_neg2 = split(ctx_neg)
+                ctx_pos1, ctx_pos2 = split(ctx_pos_remain)
+
+                base = draw(gen_prog_bool(ctx_neg1, ctx_pos1))
+
+                names_neg = []
+                for x, _ in ctx_neg:
+                    if isinstance(x, str):
+                        names_neg += [x]
+                    else: 
+                        names_neg += tm_names(x)
+                name = gen_fresh(ctx_pos + names_neg)
+                ctx_pos2 += [(name, TyBool())]
+
+                iter = draw(gen_prog_bool(ctx_neg2, ctx_pos2))
+
+                return TmIter(base, name, iter, n)
 
     if ctx_neg:
         (tm, ty_neg), *ctx_neg_remain = ctx_neg
@@ -108,8 +127,70 @@ def gen_prog_bool(draw, ctx_neg: NCtx, ctx_pos: PCtx):
 
             case TyBool():
                 raise TypeError("gen_prog_bool: Bool is positive but inside a negative context.")
+            case TyNat():
+                raise TypeError("gen_prog_bool: Nat is positive but inside a negative context.")
 
     return draw(st.one_of([st.just(TmTrue()), st.just(TmFalse())]))
+
+# Generate programs of type Nat
+@st.composite
+def gen_prog_nat(draw, ctx_neg: NCtx, ctx_pos: PCtx):
+
+    if ctx_pos:
+        (x, ty_pos), *ctx_pos_remain = ctx_pos
+        match ty_pos:
+            case TyBool():
+                condition = TmVar(x) if isinstance(x, str) else x
+                then_branch = draw(gen_prog_nat(ctx_neg, ctx_pos_remain))
+                else_branch = draw(gen_prog_nat(ctx_neg, ctx_pos_remain))
+                return TmIf(condition, then_branch, else_branch)
+            case TyNat():
+                n = TmVar(x) if isinstance(x, str) else x
+
+                ctx_neg1, ctx_neg2 = split(ctx_neg)
+                ctx_pos1, ctx_pos2 = split(ctx_pos_remain)
+
+                base = draw(gen_prog_nat(ctx_neg1, ctx_pos1))
+
+                names_neg = []
+                for x, _ in ctx_neg:
+                    if isinstance(x, str):
+                        names_neg += [x]
+                    else: 
+                        names_neg += tm_names(x)
+                name = gen_fresh(ctx_pos + names_neg)
+
+                if (not ctx_pos2):
+                    iter = TmVar(name)
+                else:
+                    iter = draw(st.one_of(gen_prog_nat(ctx_neg2, ctx_pos2  + [(name, TyNat())]),
+                                          ))
+
+                # What can I do here?
+
+                return TmIter(base, name, iter, n)
+
+    if ctx_neg:
+        (tm, ty_neg), *ctx_neg_remain = ctx_neg
+        match ty_neg:
+
+            case TyFun(ty_in, ty_out):
+                input = draw(gen_prog_ty(ctx_neg_remain, [], ty_in))
+
+                if positive(ty_out):
+                    #fix here and in gen_prog_bool
+                    return draw(gen_prog_nat([], [(TmApp(tm, input), ty_out)])) 
+                
+                else:
+                    ctx_neg = (TmApp(tm, input), ty_out), *ctx_neg_remain
+                    return draw(gen_prog_nat([(TmApp(tm, input), ty_out)], []))
+
+            case TyBool():
+                raise TypeError("gen_prog_nat: Bool is positive but inside a negative context.")
+            case TyNat():
+                raise TypeError("gen_prog_nat: Nat is positive but inside a negative context.")
+
+    return draw(gen_nat())
 
 # Generate programs of type A -o B
 @st.composite
@@ -141,16 +222,31 @@ def gen_prog_fun(draw, ctx_neg: NCtx, ctx_pos: PCtx, ty_in: Ty, ty_out: Ty):
 
 
 # ---------------------------------  Syntax  -------------------------------------- #
+@st.composite
+def gen_nat(draw):
+    return draw(one_of_weighted([
+        (st.just(TmZero()),1), 
+        (gen_succ(), 1)
+        ]))
+
+@st.composite
+def gen_succ(draw):
+    n = draw(gen_nat())
+    return TmSucc(n)
 
 @st.composite
 def gen_ty(draw):
     return draw(one_of_weighted([
                     (gen_ty_bool(),3), 
+                    (gen_ty_nat(),2), 
                     (gen_ty_fun(), 1)
                 ]))
 
 def gen_ty_bool():
     return st.just(TyBool())
+
+def gen_ty_nat():
+    return st.just(TyNat())
 
 @st.composite
 def gen_ty_fun(draw):
@@ -175,6 +271,19 @@ def gen_ctx(draw):
 
 # ---------------------------------  Helpers  --------------------------------------- #
 
+def split(ctx: NCtx | PCtx):
+
+    shuffle(ctx)
+
+    if len(ctx) <= 1:
+        split_idx = 0
+    else:
+        split_idx = randint(1, len(ctx)-1)
+        
+    ctx1 = ctx[:split_idx]
+    ctx2 = ctx[split_idx:]
+
+    return ctx1, ctx2
 
 def capture_subst(tm: Tm, x: str, v: Tm) -> Tm:
     match tm:
@@ -257,6 +366,8 @@ def neg_pos(ctx: list[tuple[str | Tm, Ty]]) -> tuple[Ctx, Ctx]:
 def positive(ty: Ty) -> bool:
     match ty:
         case TyBool():
+            return True
+        case TyNat():
             return True
         case TyFun(_, _):
             return False
