@@ -72,6 +72,9 @@ def _check(tm: Tm, ctx: Ctx) -> tuple[Ty, Ctx]:
                 raise TypeError(f"TmIf: If-branch leaves {ctx_remain2=}, but else-branch leaves {ctx_remain3=}.")
 
             return ty3, ctx_remain3
+        
+        case _:
+            raise TypeError(f"_check: Unhandled term {tm=}.")
 
 def check(tm: Tm, ctx: Ctx) -> Ty:
     ty, ctx_remain = _check(tm, ctx)
