@@ -150,8 +150,6 @@ def gen_prog_nat(draw, ctx_neg: NCtx, ctx_pos: PCtx):
                 ctx_neg1, ctx_neg2 = split(ctx_neg)
                 ctx_pos1, ctx_pos2 = split(ctx_pos_remain)
 
-                base = draw(gen_prog_nat(ctx_neg1, ctx_pos1))
-
                 names_neg = []
                 for x, _ in ctx_neg:
                     if isinstance(x, str):
@@ -160,15 +158,15 @@ def gen_prog_nat(draw, ctx_neg: NCtx, ctx_pos: PCtx):
                         names_neg += tm_names(x)
                 name = gen_fresh(ctx_pos + names_neg)
 
-                if (not ctx_pos2):
+                random_n = randint(0, 5)
+                if random_n <= 3:
+                    base = draw(gen_prog_nat(ctx_neg, ctx_pos_remain))
                     iter = TmVar(name)
+                    return TmIter(base, name, iter, n)
                 else:
-                    iter = draw(st.one_of(gen_prog_nat(ctx_neg2, ctx_pos2  + [(name, TyNat())]),
-                                          ))
-
-                # What can I do here?
-
-                return TmIter(base, name, iter, n)
+                    base = draw(gen_prog_nat(ctx_neg1, ctx_pos1))
+                    iter = draw(gen_prog_nat(ctx_neg2, ctx_pos2  + [(name, TyNat())]))
+                    return TmIter(base, name, iter, n)
 
     if ctx_neg:
         (tm, ty_neg), *ctx_neg_remain = ctx_neg
@@ -178,7 +176,6 @@ def gen_prog_nat(draw, ctx_neg: NCtx, ctx_pos: PCtx):
                 input = draw(gen_prog_ty(ctx_neg_remain, [], ty_in))
 
                 if positive(ty_out):
-                    #fix here and in gen_prog_bool
                     return draw(gen_prog_nat([], [(TmApp(tm, input), ty_out)])) 
                 
                 else:
@@ -296,6 +293,11 @@ def capture_subst(tm: Tm, x: str, v: Tm) -> Tm:
             return TmTrue()
         case TmFalse():
             return TmFalse()
+        case TmZero():
+            return TmZero()
+        case TmSucc(tm):
+            tm_subst = capture_subst(tm, x, v)
+            return TmSucc(tm_subst)
         case TmFun(y, ty, tm_body):
             tm_subst = capture_subst(tm_body, x, v)
             return TmFun(y, ty, tm_subst)
@@ -308,6 +310,11 @@ def capture_subst(tm: Tm, x: str, v: Tm) -> Tm:
             tm2_subst = capture_subst(tm2, x, v)
             tm3_subst = capture_subst(tm3, x, v)
             return TmIf(tm1_subst, tm2_subst, tm3_subst)
+        case TmIter(tm1, y, tm2, tm3):
+            tm1_subst = capture_subst(tm1, x, v)
+            tm2_subst = capture_subst(tm2, x, v)
+            tm3_subst = capture_subst(tm3, x, v)
+            return TmIter(tm1_subst, y, tm2_subst, tm3_subst)
 
 
 def tm_names(tm: Tm) -> list[str]:
@@ -318,12 +325,18 @@ def tm_names(tm: Tm) -> list[str]:
             return []
         case TmFalse():
             return []
+        case TmZero():
+            return []
+        case TmSucc(tm):
+            return tm_names[tm]
         case TmFun(x, ty, tm):
             return [x] + tm_names(tm)
         case TmApp(tm1, tm2):
             return tm_names(tm1) + tm_names(tm2)
         case TmIf(tm1, tm2, tm3):
             return tm_names(tm1) + tm_names(tm2) + tm_names(tm3)
+        case TmIter(tm1, y, tm2, tm3):
+            return tm_names(tm1) + [y] + tm_names[tm2] + tm_names[tm3]
 
 
 # Generate fresh variable names, not already in context
