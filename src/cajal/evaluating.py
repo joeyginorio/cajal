@@ -25,7 +25,7 @@ def evaluate(tm: Tm, env: Env) -> Val:
             v2 = evaluate(tm2, env)
             match v1:
                 case VClosure(x, ty, tm, c_env):
-                    c_env |= {x: (v2, ty)}
+                    c_env |= {x: v2}
                     return evaluate(tm, c_env)
                 case _:
                     raise TypeError(f"TmApp: {tm1=} doesn't evaluate to a closure, {v1=}.")
