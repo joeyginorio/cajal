@@ -37,9 +37,9 @@ def compile(tm: Tm, env):
 def compile_val(v: Val):
     match v:
         case VTrue():
-            return tensor([1.,0.])
+            return tensor([1.,0.], device=device)
         case VFalse():
-            return tensor([0.,1.])
+            return tensor([0.,1.], device=device)
         case VClosure(x, ty, tm, src_env):
             tgt_env = {y: compile_val(val_y) for y, val_y in src_env.items()}
             return lambda arg, env=tgt_env: compile(tm, tgt_env | {x: arg})
