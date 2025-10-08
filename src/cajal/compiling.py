@@ -17,9 +17,9 @@ def compile(tm: Tm, env):
         case TmVar(x):
             return env[x]
         case TmTrue():
-            return tensor([1.,0.], requires_grad=True, device=device)
+            return tensor([1., 0.], requires_grad=True, device=device)
         case TmFalse():
-            return tensor([0.,1.], requires_grad=True, device=device)
+            return tensor([0., 1.], requires_grad=True, device=device)
         case TmZero():
             return tensor([1.], requires_grad=True)
         case TmSucc(tm):
