@@ -43,11 +43,15 @@ def compile(tm: Tm, env):
             return lambda arg, env=env: compile(tm, env | {x: arg})
         
         case TmApp(tm1, tm2):
-            # Maybe dispatch on whether tm1 is function/matrix
             f_closure = compile(tm1, env)
             arg = compile(tm2, env)
             return f_closure(arg)   
 
+class LMap:
+    def __init__(self, f):
+        self.f = f
+    def __call__(self, x):
+        return self.f(x)
 
 def compile_val(v: Val):
     match v:
