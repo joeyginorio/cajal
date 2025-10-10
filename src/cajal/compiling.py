@@ -17,37 +17,62 @@ type VectorEnv = Mapping[str, Vector]
 
 type MultilinearMap = Callable[[VectorEnv], Vector]
 
-def compile(tm: Tm, env):
+def compile(tm: Tm) -> MultilinearMap:
     match tm:
 
         case TmVar(x):
-            return env[x]
+            return lambda env: env[x]
         
         case TmTrue():
-            return tensor([1., 0.], requires_grad=True, device=device)
+            tt = tensor([1., 0.], requires_grad=False, device=device)
+            return lambda env: tt
         
         case TmFalse():
-            return tensor([0., 1.], requires_grad=True, device=device)
+            ff = tensor([0., 1.], requires_grad=False, device=device)
+            return lambda env: ff
         
         case TmZero():
-            return tensor([1.], requires_grad=True)
-        
+            zero = tensor([1.], requires_grad=False, device=device)
+            return lambda env: zero
+
         case TmSucc(tm):
-            n = compile(tm, env)
-            succ_n = torch.concat([torch.tensor([0.]), n])
-            succ_n.retain_grad()
-            return succ_n
+            n = compile(tm)
+            z = torch.tensor([0.], requires_grad=False, device=device)
+            return lambda env: torch.concat([z, n(env)])
         
         case TmIf(tm1, tm2, tm3):
-            b = compile(tm1, env)
-            branch_if = compile(tm2, env)
-            branch_else = compile(tm3, env)
-            return b[0] * branch_if + b[1] * branch_else
+            b = compile(tm1)
+            branch_if = compile(tm2)
+            branch_else = compile(tm3)
+
+            def execute(env):
+                cond = b(env)
+                return cond[0] * branch_if(env) + cond[1] * branch_else(env)
+            
+            return execute
         
         case TmFun(x, _, tm):
-            return LMap (lambda arg, env=env: compile(tm, env | {x: arg}))
+            body = compile(tm)
+            return lambda env: LinearMap(lambda arg: body(env | {x: arg}))
         
         case TmApp(tm1, tm2):
+            f = compile(tm1)
+            x = compile(tm2)
+            return lambda env: f(env)(x(env))
+
+def compile_val(v: Val):
+    match v:
+        case VTrue():
+            tt = tensor([1., 0.], requires_grad=False, device=device)
+            return lambda env: tt
+        case VFalse():
+            ff = tensor([0., 1.], requires_grad=False, device=device)
+            return lambda env: ff
+        case VClosure(x, ty, tm, src_env):
+            tgt_env = {y: compile_val(val_y)({}) for y, val_y in src_env.items()}
+            body = compile(tm)
+            return lambda env: LinearMap(lambda arg: body(tgt_env | {x: arg}))
+
 class LinearMap:
 
     def __init__(self, f):
