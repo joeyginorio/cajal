@@ -1,5 +1,6 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from collections.abc import Mapping
+from typing import Optional
 
 # ------------------------------------- Types ------------------------------------- #
 
@@ -32,43 +33,47 @@ type Tm = (  TmVar
            )
 
 @dataclass
-class TmVar:
+class Term:
+    ty_checked: Optional[Ty] = field(default=None, init=False)
+
+@dataclass
+class TmVar(Term):
     name: str
 
 @dataclass
-class TmTrue: ...
+class TmTrue(Term): ...
 
 @dataclass
-class TmFalse: ...
+class TmFalse(Term): ...
 
 @dataclass
-class TmZero: ...
+class TmZero(Term): ...
 
 @dataclass
-class TmSucc:
+class TmSucc(Term):
     tm: Tm
 
 @dataclass
-class TmIter:
+class TmIter(Term):
     tm1: Tm
     name2: str
     tm2: Tm
     tm3: Tm
 
 @dataclass
-class TmIf:
+class TmIf(Term):
     tm1: Tm
     tm2: Tm
     tm3: Tm
 
 @dataclass
-class TmFun:
+class TmFun(Term):
     name: str
     ty: Ty
     tm: Tm
 
 @dataclass
-class TmApp:
+class TmApp(Term):
     tm1 : Tm
     tm2 : Tm
 
