@@ -51,8 +51,8 @@ def compile(tm: Tm) -> MultilinearMap:
             
             return execute
         
-        case TmFun(x, _, tm):
-            body = compile(tm)
+        case TmFun(x, _, tm_body):
+            body = compile(tm_body)
             return lambda env: LinearMap(lambda arg: body(env | {x: arg}))
         
         case TmApp(tm1, tm2):
