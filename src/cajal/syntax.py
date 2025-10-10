@@ -35,6 +35,7 @@ type Tm = (  TmVar
 @dataclass
 class Term:
     ty_checked: Optional[Ty] = field(default=None, init=False)
+    closed: bool = field(default=None, init=False)
 
 @dataclass
 class TmVar(Term):
