@@ -15,9 +15,8 @@ def test_compiler_correctness(ctx_tm_ty):
     _, tm, _ = ctx_tm_ty
     v = evaluate(tm, {})
 
-    compiled_tm = compile(tm, {})
-    compiled_v = compile_val(v)
-
+    compiled_tm = compile(tm)({})
+    compiled_v = compile_val(v)({})
     assert all(compiled_tm == compiled_v)
 
 @settings(max_examples=100, 
@@ -28,7 +27,7 @@ def test_compiler_correctness(ctx_tm_ty):
 def test_grad_exists(ctx_tm_ty):
     _, tm, _ = ctx_tm_ty
     env = {'x' : tensor([1., 2.], requires_grad=True)}
-    y = compile(tm, env)
+    y = compile(tm)(env)
     y.sum().backward()
     assert all(isfinite(env['x'].grad))
 
