@@ -40,7 +40,7 @@ def test_grad_not():
           = [1, 0] 
     '''
     env = {'x' : tensor([1., 2.], requires_grad=True)}
-    y = compile(TmIf(TmVar('x'), TmFalse(), TmTrue()), env)
+    y = compile(TmIf(TmVar('x'), TmFalse(), TmTrue()))(env)
     y.sum().backward()
     assert all(env['x'].grad == tensor([1., 1.]))
 
