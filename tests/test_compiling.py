@@ -33,7 +33,7 @@ def test_grad_exists(ctx_tm_ty):
     assert all(isfinite(env['x'].grad))
 
 def test_grad_not():
-    ''' 
+    '''
     f(x) = x[0] * [0,1]^T + x[1] * [1,0]^T
     df/x0 = [0,1]^T
     df/x1 = [1,0]^T
