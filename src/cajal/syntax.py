@@ -88,22 +88,22 @@ type Val = (  VTrue
             )
 
 @dataclass
-class VTrue: ...
+class VTrue(Term): ...
 
 @dataclass
-class VFalse: ...
+class VFalse(Term): ...
 
 @dataclass
-class VZero: ...
+class VZero(Term): ...
 
 @dataclass
-class VSucc:
+class VSucc(Term):
     v: Val
 
 type Env = Mapping[str, tuple[Val, Ty]]
 
 @dataclass
-class VClosure:
+class VClosure(Term):
     name: str
     ty: Ty
     tm: Tm
