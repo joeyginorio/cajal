@@ -12,29 +12,35 @@ def _check(tm: Tm, ctx: Ctx) -> tuple[Ty, Ctx]:
                 raise TypeError(f"TmVar: {x} not in {ctx=}.")
 
             ctx_remain = {y: ty for (y, ty) in ctx.items() if y != x}
-            return ctx[x], ctx_remain
+            tm.ty_checked = ctx[x]
+            return tm.ty_checked, ctx_remain
 
         case TmTrue():
-            return TyBool(), ctx
+            tm.ty_checked = TyBool()
+            return tm.ty_checked, ctx
 
         case TmFalse():
-            return TyBool(), ctx
+            tm.ty_checked = TyBool()
+            return tm.ty_checked, ctx
         
         case TmZero():
-            return TyNat(), ctx
+            tm.ty_checked = TyNat()
+            return tm.ty_checked, ctx
     
         case TmSucc(tm):
             ty, ctx_remain = _check(tm, ctx)
             match ty:
                 case TyNat():
-                    return TyNat(), ctx_remain
+                    tm.ty_checked = TyNat()
+                    return tm.ty_checked, ctx_remain
                 case _:
                     raise TypeError(f"TmSucc: Successor not applied to a Nat, {tm=} is a {ty=}.")
 
         case TmFun(x, ty1, e):
             ctx_extend = ctx | {x: ty1}
             ty2, ctx_remain = _check(e, ctx_extend)
-            return TyFun(ty1, ty2), ctx_remain
+            tm.ty_checked = TyFun(ty1, ty2)
+            return tm.ty_checked, ctx_remain
 
         case TmIter(e1, y, e2, e3):
             ty3, ctx_remain3 = _check(e3, ctx)
@@ -42,7 +48,8 @@ def _check(tm: Tm, ctx: Ctx) -> tuple[Ty, Ctx]:
                 case TyNat():
                     ty1, ctx_remain1 = _check(e1, ctx_remain3)
                     ty2, ctx_remain2 = _check(e2, ctx_remain1 | {y: ty1})
-                    return ty2, ctx_remain2
+                    tm.ty_checked = ty2
+                    return tm.ty_checked, ctx_remain2
                 case _:
                     raise TypeError(f"TmIter: Iter not applied to a Nat, {tm3=} is a {ty3=}.")
 
@@ -54,7 +61,9 @@ def _check(tm: Tm, ctx: Ctx) -> tuple[Ty, Ctx]:
                     ty2, ctx_remain = _check(e2, ctx_remain)
                     if ty11 != ty2:
                         raise TypeError(f"TmApp: Function's input must be a {ty11}, but is a {ty2}.")
-                    return ty12, ctx_remain
+                    
+                    tm.ty_checked = ty12
+                    return tm.ty_checked, ctx_remain
                 
                 case _:
                     raise TypeError(f"TmApp: LHS isn't a function, it's a {ty1}.")
@@ -71,7 +80,8 @@ def _check(tm: Tm, ctx: Ctx) -> tuple[Ty, Ctx]:
             if ctx_remain2 != ctx_remain3:
                 raise TypeError(f"TmIf: If-branch leaves {ctx_remain2=}, but else-branch leaves {ctx_remain3=}.")
 
-            return ty3, ctx_remain3
+            tm.ty_checked = ty3
+            return tm.ty_checked, ctx_remain3
         
         case _:
             raise TypeError(f"_check: Unhandled term {tm=}.")
@@ -80,19 +90,26 @@ def check(tm: Tm, ctx: Ctx) -> Ty:
     ty, ctx_remain = _check(tm, ctx)
     if ctx_remain:
         raise TypeError(f"check: Some context remains {ctx_remain=}, when checking {tm} with {ctx}.")
-    return ty
+    tm.ty_checked = ty
+    return tm.ty_checked
 
 def check_val(val: Val) -> Ty:
     match val:
         case VTrue():
-            return TyBool()
+            val.ty_checked = TyBool()
+            return val.ty_checked
         case VFalse():
-            return TyBool()
+            val.ty_checked = TyBool()
+            return val.ty_checked
         case VZero():
-            return TyNat()
+            val.ty_checked = TyNat()
+            return val.ty_checked
         case VSucc(v):
-            return check_val(v)
+            val.ty_checked = check_val(v)
+            return val.ty_checked
         case VClosure(x, ty, tm, c_env):
-            ctx = {y: check_val(tm_y) for (y, tm_y) in c_env.items()}
+            ctx = {y: check_val(y_val) for (y, y_val) in c_env.items()}
             ctx |= {x: ty}
-            return TyFun(ty, check(tm, ctx))
+            ty_body = check(tm, ctx)
+            val.ty_checked = TyFun(ty, ty_body)
+            return TyFun(ty, ty_body)
