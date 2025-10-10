@@ -35,8 +35,8 @@ def compile(tm: Tm) -> MultilinearMap:
             zero = tensor([1.], requires_grad=False, device=device)
             return lambda env: zero
 
-        case TmSucc(tm):
-            n = compile(tm)
+        case TmSucc(tm_n):
+            n = compile(tm_n)
             z = torch.tensor([0.], requires_grad=False, device=device)
             return lambda env: torch.concat([z, n(env)])
         
