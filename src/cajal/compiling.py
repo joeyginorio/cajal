@@ -1,5 +1,5 @@
 import torch
-from collections.abc import Mapping
+from collections.abc import Mapping, Callable
 from torch import tensor, Tensor
 from cajal.typing import *
 from functools import partial
@@ -12,6 +12,10 @@ elif torch.cuda.is_available():
 else:
     device = torch.device("cpu")
 
+type Vector = Tensor | LinearMap
+type VectorEnv = Mapping[str, Vector]
+
+type MultilinearMap = Callable[[VectorEnv], Vector]
 
 def compile(tm: Tm, env):
     match tm:
@@ -44,12 +48,7 @@ def compile(tm: Tm, env):
             return LMap (lambda arg, env=env: compile(tm, env | {x: arg}))
         
         case TmApp(tm1, tm2):
-            f_closure = compile(tm1, env)
-            arg = compile(tm2, env)
-            return f_closure(arg)
-
-
-class LMap:
+class LinearMap:
 
     def __init__(self, f):
         self.f = f
