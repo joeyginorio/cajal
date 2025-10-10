@@ -12,6 +12,7 @@ elif torch.cuda.is_available():
 else:
     device = torch.device("cpu")
 
+
 def compile(tm: Tm, env):
     match tm:
 
@@ -40,18 +41,46 @@ def compile(tm: Tm, env):
             return b[0] * branch_if + b[1] * branch_else
         
         case TmFun(x, _, tm):
-            return lambda arg, env=env: compile(tm, env | {x: arg})
+            return LMap (lambda arg, env=env: compile(tm, env | {x: arg}))
         
         case TmApp(tm1, tm2):
             f_closure = compile(tm1, env)
             arg = compile(tm2, env)
-            return f_closure(arg)   
+            return f_closure(arg)
+
 
 class LMap:
+
     def __init__(self, f):
         self.f = f
+        self.mat = None
+        self.dim_in = None
+
     def __call__(self, x):
         return self.f(x)
+    
+    def __rmatmul__(self, W):
+        # 1. Compute matrix of self.f
+        self.f = tensor([[1.,0.],[0.,1.]], device=device)
+        # 2. Do W @ flatten(self.mat)
+        self.f = torch.flatten(self.f)
+        # 3. Compute result
+        res = W @ self.f
+
+        # 4. Return LMap is output is func, otherwise return vec
+        match self.ty_out:
+            case TyFun(_, _):
+                return LMap(lambda x : self._reshaping_matmul(res, x))
+            case _:
+                return res
+    
+    @staticmethod
+    def _reshaping_matmul(w, x):
+        W = torch.reshape(w, (-1, len(x)))
+        return W @ x
+
+
+        
 
 def compile_val(v: Val):
     match v:
