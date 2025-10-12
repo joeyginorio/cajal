@@ -157,3 +157,13 @@ def bases(ty: Ty):
             for i in range(dim_ty):
                 bases.append(reshape_with_ty(basis_mat[:,i], ty))
             return bases
+
+
+def dim(ty: Ty):
+    match ty:
+        case TyBool():
+            return 2
+        case TyNat():
+            return 10
+        case TyFun(ty1, ty2):
+            return dim(ty1) * dim(ty2)
