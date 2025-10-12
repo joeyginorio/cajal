@@ -167,3 +167,12 @@ def dim(ty: Ty):
             return 10
         case TyFun(ty1, ty2):
             return dim(ty1) * dim(ty2)
+
+def reshape_with_ty(tens: Tensor, ty: Ty):
+    match ty:
+        case TyFun(ty_in, ty_out):
+            return torch.reshape(tens, (dim(ty_out), dim(ty_in)))
+        case _:
+            return tens
+        
+
