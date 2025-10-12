@@ -1,7 +1,7 @@
 import torch
 import random
 import csv
-from cajal.compiling import compile
+from cajal.compiling import compile, TypedTensor
 import cajal.syntax as cj
 from torch import nn, optim
 from torch import vmap
@@ -18,13 +18,13 @@ else:
 print(f"Using device: {device}")
 
 # ---------- Data --------------------
-train_xs1 = torch.load("experiments/data/train_and_xs1.pt")
-train_xs2 = torch.load("experiments/data/train_and_xs2.pt")
-train_ys = torch.load("experiments/data/train_and_ys.pt")
+train_xs1 = torch.load("experiments/and/data/train_and_xs1.pt")
+train_xs2 = torch.load("experiments/and/data/train_and_xs2.pt")
+train_ys = torch.load("experiments/and/data/train_and_ys.pt")
 
-test_xs1 = torch.load("experiments/data/test_and_xs1.pt")
-test_xs2 = torch.load("experiments/data/test_and_xs2.pt")
-test_ys = torch.load("experiments/data/test_and_ys.pt")
+test_xs1 = torch.load("experiments/and/data/test_and_xs1.pt")
+test_xs2 = torch.load("experiments/and/data/test_and_xs2.pt")
+test_ys = torch.load("experiments/and/data/test_and_ys.pt")
 
 train_ds = TensorDataset(train_xs1, train_xs2, train_ys)
 test_ds = TensorDataset(test_xs1, test_xs2, test_ys)
@@ -52,9 +52,13 @@ class ModelD(nn.Module):
         (cj.TmIf(cj.TmVar('x2'), cj.TmFalse(), cj.TmFalse())))
 
     def forward(self, x1, x2):
-        env = {'x1' : self.netx1(x1), 'x2' : self.netx2(x2)}
-        cand_compiled = vmap(partial(compile, self.cand))
-        return cand_compiled(env)
+        env = {'x1' : TypedTensor(self.netx1(x1), cj.TyBool()), 
+               'x2' : TypedTensor(self.netx2(x2), cj.TyBool())}
+        cand_compiled = vmap(compile(self.cand), 
+                             in_dims=({'x1': (TypedTensor(0, None)),
+                                       'x2': (TypedTensor(0, None))},),
+                            out_dims=TypedTensor(0, None))
+        return cand_compiled(env).data
 
 # ---------- Training ----------------
 seeds = [0,1,2,3,4]
