@@ -105,43 +105,38 @@ class TypedTensor(NamedTuple):
 
 class LinearMap:
 
-    def __init__(self, f):
+    def __init__(self, f, ty: Ty):
         self.f = f
-        self.mat = None
-        self.dim_in = None
+        self.ty = ty
 
     def __call__(self, x):
         return self.f(x)
     
-    def __rmatmul__(self, W):
-        # 1. Compute matrix of self.f
-        self.f = tensor([[1.,0.],[0.,1.]], device=device)
-        # 2. Do W @ flatten(self.mat)
-        self.f = torch.flatten(self.f)
-        # 3. Compute result
-        res = W @ self.f
-
-        # 4. Return LMap is output is func, otherwise return vec
-        match self.ty_out:
-            case TyFun(_, _):
-                return LMap(lambda x : self._reshaping_matmul(res, x))
-            case _:
-                return res
+    def __rmul__(self, a):
+        return LinearMap(lambda x : a * self.f(x), self.ty)
     
-    @staticmethod
-    def _reshaping_matmul(w, x):
-        W = torch.reshape(w, (-1, len(x)))
-        return W @ x
+    def __add__(self, g):
+        return LinearMap(lambda x : self.f(x) + g(x), self.ty)
+    
+    def __matmul__(self, x):
+        return self.f(x)
 
+def mat_of_lmap(lmap: LinearMap):
+    match lmap.ty:
+        case TyFun(ty_in, ty_out):
+            # 1. get basis of input
+            # 2. push each basis through lmap.f 
+            # 2a. if ty_out is base type, we can observe directly, create the matrix
+            # 2b. if ty_out is function type, we can't observe directly......
+            # -- lmap.f(b1) = some function
+            # -- lmap.f(b2) = some function
+            # -- lmap.f(b3) = some function
+            # -- lmap.f(b4) = some function
+            # So then for each of these we then recursively compute the mat_of_lmap
+            outs = []
+            for basis in bases(ty_in):
+                outs.append(lmap.f(basis))
 
-        
+        case _:
+            raise TypeError(f"{lmap.ty=} is not a function, so can't build its matrix.")
 
-def compile_val(v: Val):
-    match v:
-        case VTrue():
-            return tensor([1.,0.], device=device)
-        case VFalse():
-            return tensor([0.,1.], device=device)
-        case VClosure(x, ty, tm, src_env):
-            tgt_env = {y: compile_val(val_y) for y, val_y in src_env.items()}
-            return lambda arg, env=tgt_env: compile(tm, tgt_env | {x: arg})
