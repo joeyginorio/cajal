@@ -124,18 +124,23 @@ class LinearMap:
 def mat_of_lmap(lmap: LinearMap):
     match lmap.ty:
         case TyFun(ty_in, ty_out):
-            # 1. get basis of input
-            # 2. push each basis through lmap.f 
-            # 2a. if ty_out is base type, we can observe directly, create the matrix
-            # 2b. if ty_out is function type, we can't observe directly......
-            # -- lmap.f(b1) = some function
-            # -- lmap.f(b2) = some function
-            # -- lmap.f(b3) = some function
-            # -- lmap.f(b4) = some function
-            # So then for each of these we then recursively compute the mat_of_lmap
-            outs = []
-            for basis in bases(ty_in):
-                outs.append(lmap.f(basis))
+
+            if not isinstance(ty_out, TyFun):
+                outs = []
+                for basis in bases(ty_in):
+                    outs.append(lmap.f(basis).data.reshape(-1,1))
+                return TypedTensor(torch.hstack(outs), lmap.ty)
+            else:
+                outs = []
+                for basis in bases(ty_in):
+                    out = lmap.f(basis)
+                    if isinstance(out, TypedTensor):
+                        outs.append(torch.reshape(out.data, (-1, 1)))
+                    elif isinstance(out, LinearMap):
+                        mat_out = mat_of_lmap(out).data.reshape(-1,1)
+                        outs.append(mat_out)
+
+                return TypedTensor(torch.hstack(outs), lmap.ty)
 
         case _:
             raise TypeError(f"{lmap.ty=} is not a function, so can't build its matrix.")
