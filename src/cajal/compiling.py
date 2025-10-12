@@ -140,3 +140,20 @@ def mat_of_lmap(lmap: LinearMap):
         case _:
             raise TypeError(f"{lmap.ty=} is not a function, so can't build its matrix.")
 
+def bases(ty: Ty):
+    match ty:
+
+        case TyBool():
+            basis_mat = torch.eye(2)
+            basis_tt = basis_mat[:,0]
+            basis_ff = basis_mat[:,1]
+            return [basis_tt, basis_ff]
+        
+        case TyFun(_, _):
+            dim_ty = dim(ty)
+            basis_mat = torch.eye(dim_ty)
+
+            bases = []
+            for i in range(dim_ty):
+                bases.append(reshape_with_ty(basis_mat[:,i], ty))
+            return bases
