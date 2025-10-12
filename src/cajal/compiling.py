@@ -73,6 +73,36 @@ def compile_val(v: Val):
             body = compile(tm_body)
             return lambda env: LinearMap(lambda arg: body(tgt_env | {x: arg}), v.ty_checked)
 
+type Vector = Tensor | LinearMap
+type VectorEnv = Mapping[str, Vector]
+
+class TypedTensor(NamedTuple):
+    data: Tensor
+    ty: Ty
+    
+    def __eq__(self, y):
+        return all(self.data == y.data)
+
+    def __call__(self, x):
+        return self @ x
+
+    def __rmul__(self, x):
+        return TypedTensor(x * self.data, self.ty)
+
+    def __add__(self, y):
+        return TypedTensor(self.data + y.data, self.ty)
+
+    def __matmul__(self, x):
+        if isinstance(x, TypedTensor):
+            result = self.data @ torch.flatten(x.data)
+            reshaped_result = reshape_with_ty(result, self.ty.ty2)
+            return TypedTensor(reshaped_result, self.ty.ty2)
+        else:
+            mat = torch.ones(dim(x.ty)) ## dummy
+            result = self.data @ torch.flatten(mat)
+            reshaped_result = reshape_with_ty(result, self.ty.ty2)
+            return TypedTensor(reshaped_result, self.ty.ty2)
+
 class LinearMap:
 
     def __init__(self, f):
