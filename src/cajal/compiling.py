@@ -2,18 +2,14 @@ import torch
 from collections.abc import Mapping, Callable
 from torch import tensor, Tensor
 from cajal.typing import *
-from functools import partial
+from typing import NamedTuple
 
-# TODO: Refactor compile and tests to take device as argument
 if torch.backends.mps.is_available():
     device = torch.device("mps")
 elif torch.cuda.is_available():
     device = torch.device("cuda")
 else:
     device = torch.device("cpu")
-
-type Vector = Tensor | LinearMap
-type VectorEnv = Mapping[str, Vector]
 
 type MultilinearMap = Callable[[VectorEnv], Vector]
 
@@ -24,21 +20,21 @@ def compile(tm: Tm) -> MultilinearMap:
             return lambda env: env[x]
         
         case TmTrue():
-            tt = tensor([1., 0.], requires_grad=False, device=device)
+            tt = TypedTensor(tensor([1., 0.], requires_grad=False, device=device), TyBool())
             return lambda env: tt
         
         case TmFalse():
-            ff = tensor([0., 1.], requires_grad=False, device=device)
+            ff = TypedTensor(tensor([0., 1.], requires_grad=False, device=device), TyBool())
             return lambda env: ff
         
         case TmZero():
-            zero = tensor([1.], requires_grad=False, device=device)
+            zero = TypedTensor(tensor([1.], requires_grad=False, device=device), TyNat())
             return lambda env: zero
 
         case TmSucc(tm_n):
             n = compile(tm_n)
             z = torch.tensor([0.], requires_grad=False, device=device)
-            return lambda env: torch.concat([z, n(env)])
+            return lambda env: TypedTensor(torch.concat([z.data, n(env).data]), TyNat())
         
         case TmIf(tm1, tm2, tm3):
             b = compile(tm1)
@@ -46,15 +42,19 @@ def compile(tm: Tm) -> MultilinearMap:
             branch_else = compile(tm3)
 
             def execute(env):
-                cond = b(env)
+                cond = b(env).data
                 return cond[0] * branch_if(env) + cond[1] * branch_else(env)
             
             return execute
         
         case TmFun(x, _, tm_body):
             body = compile(tm_body)
-            return lambda env: LinearMap(lambda arg: body(env | {x: arg}))
+            return lambda env: LinearMap(lambda arg: body(env | {x: arg}), tm.ty_checked)
         
+        # tensor tensor (tensor.__matmul__) good
+        # tensor lambda (tensor.__matmul__)
+        # lambda lambda (linmap.__call__) good
+        # lambda tensor (linmap.__call__) good
         case TmApp(tm1, tm2):
             f = compile(tm1)
             x = compile(tm2)
@@ -63,15 +63,15 @@ def compile(tm: Tm) -> MultilinearMap:
 def compile_val(v: Val):
     match v:
         case VTrue():
-            tt = tensor([1., 0.], requires_grad=False, device=device)
+            tt = TypedTensor(tensor([1., 0.], requires_grad=False, device=device), TyBool())
             return lambda env: tt
         case VFalse():
-            ff = tensor([0., 1.], requires_grad=False, device=device)
-            return lambda env: ff
-        case VClosure(x, ty, tm, src_env):
+            tt = TypedTensor(tensor([0., 1.], requires_grad=False, device=device), TyBool())
+            return lambda env: tt
+        case VClosure(x, ty, tm_body, src_env):
             tgt_env = {y: compile_val(val_y)({}) for y, val_y in src_env.items()}
-            body = compile(tm)
-            return lambda env: LinearMap(lambda arg: body(tgt_env | {x: arg}))
+            body = compile(tm_body)
+            return lambda env: LinearMap(lambda arg: body(tgt_env | {x: arg}), v.ty_checked)
 
 class LinearMap:
 
