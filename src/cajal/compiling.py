@@ -34,7 +34,7 @@ def compile(tm: Tm) -> MultilinearMap:
         case TmSucc(tm_n):
             n = compile(tm_n)
             z = torch.tensor([0.], requires_grad=False, device=device)
-            return lambda env: TypedTensor(torch.concat([z.data, n(env).data]), TyNat())
+            return lambda env: TypedTensor(torch.concat([z, n(env).data]), TyNat())
         
         case TmIf(tm1, tm2, tm3):
             b = compile(tm1)
