@@ -96,12 +96,12 @@ class TypedTensor(NamedTuple):
         if isinstance(x, TypedTensor):
             result = self.data @ torch.flatten(x.data)
             reshaped_result = reshape_with_ty(result, self.ty.ty2)
-            return TypedTensor(reshaped_result, self.ty.ty2)
+            return reshaped_result
         else:
-            mat = torch.ones(dim(x.ty)) ## dummy
-            result = self.data @ torch.flatten(mat)
+            mat = mat_of_lmap(x)
+            result = self.data @ torch.flatten(mat.data)
             reshaped_result = reshape_with_ty(result, self.ty.ty2)
-            return TypedTensor(reshaped_result, self.ty.ty2)
+            return reshaped_result
 
 class LinearMap:
 
