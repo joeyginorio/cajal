@@ -26,3 +26,6 @@ experiments/and/figures/and_acc_global.pdf
 experiments/and/data/direct_and_acc_test.csv
 experiments/and/data/direct_and_loss_test.csv
 experiments/and/data/direct_and_loss_train.csv
+experiments/and/data/church_and_acc_test.csv
+experiments/and/data/church_and_loss_test.csv
+experiments/and/data/church_and_loss_train.csv
