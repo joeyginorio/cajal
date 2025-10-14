@@ -89,8 +89,14 @@ class TypedTensor(NamedTuple):
     def __rmul__(self, x):
         return TypedTensor(x * self.data, self.ty)
 
-    def __add__(self, y):
-        return TypedTensor(self.data + y.data, self.ty)
+    def __add__(self, x):
+        if isinstance(x, TypedTensor):
+            result = self.data + x.data
+            return TypedTensor(result, self.ty)
+        else:
+            mat = mat_of_lmap(x)
+            result = self.data + mat.data
+            return TypedTensor(result, self.ty)
 
     def __matmul__(self, x):
         if isinstance(x, TypedTensor):
