@@ -6,13 +6,13 @@ plt.rcParams['axes.unicode_minus'] = False
 
 df5 = pd.read_csv("experiments/and/data/direct_and_acc_test.csv")
 # idf5 = pd.read_csv("experiments/and/data/indirect_and_acc_test.csv")
-# tdf5 = pd.read_csv("experiments/and/data/type_and_acc_test.csv")
+tdf5 = pd.read_csv("experiments/and/data/type_and_acc_test.csv")
 rdf5 = pd.read_csv("experiments/and/data/church_and_acc_test.csv")
 
 df5["model"]  = "D"
 # idf5["model"] = "I"
 rdf5["model"] = "C"
-# tdf5["model"] = "T"
+tdf5["model"] = "T"
 
 bmidnight = (0, .329, .576)
 bcayenne = (.8, 0, .14)
@@ -21,11 +21,11 @@ green = (0, 0.5, 0)
 
 palette = {
     "D":   bmidnight,      # bmidnight
-    "I": bcayenne,       # bcayenne
+    # "I": bcayenne,       # bcayenne
     "C": purple,
     "T": green
 }
-hue_order = ["D", "C", "T", "I"]
+hue_order = ["D", "C", "T"]
 
 sns.set_theme(style="white",
               font="Futura",
@@ -35,7 +35,7 @@ sns.set_theme(style="white",
                 "ytick.labelsize": 15})
 
 # ── 2. concatenate ───────────────────────────────────
-big = pd.concat([df5, rdf5], ignore_index=True)
+big = pd.concat([df5, tdf5, rdf5], ignore_index=True)
 
 g = sns.relplot(
     data=big,
