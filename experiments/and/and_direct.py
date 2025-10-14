@@ -2,6 +2,7 @@ import torch
 import random
 import csv
 from cajal.compiling import compile, TypedTensor
+from cajal.typing import check
 import cajal.syntax as cj
 from torch import nn, optim
 from torch import vmap
@@ -50,6 +51,7 @@ class ModelD(nn.Module):
         self.cand = cj.TmIf(cj.TmVar('x1'), 
         (cj.TmIf(cj.TmVar('x2'), cj.TmTrue(), cj.TmFalse())), 
         (cj.TmIf(cj.TmVar('x2'), cj.TmFalse(), cj.TmFalse())))
+        check(self.cand, {'x1': cj.TyBool(), 'x2': cj.TyBool()})
 
     def forward(self, x1, x2):
         env = {'x1' : TypedTensor(self.netx1(x1), cj.TyBool()), 
@@ -150,18 +152,18 @@ for seed in seeds:
 
 
 
-with open("experiments/and/data/direct_and_loss_train.csv", "w", newline="") as f:
-    writer = csv.writer(f)
-    writer.writerow(["step", "seed", "batch size", "lr", "loss"])
-    for (step, seed, batch_size, lr), loss in loss_train.items():
-        writer.writerow([step, seed, batch_size, lr, loss])
-with open("experiments/and/data/direct_and_loss_test.csv", "w", newline="") as f:
-    writer = csv.writer(f)
-    writer.writerow(["step", "seed", "batch size", "lr", "loss"])
-    for (step, seed, batch_size, lr), loss in loss_test.items():
-        writer.writerow([step, seed, batch_size, lr, loss])
-with open("experiments/and/data/direct_and_acc_test.csv", "w", newline="") as f:
-    writer = csv.writer(f)
-    writer.writerow(["step", "seed", "batch size", "lr", "acc"])
-    for (step, seed, batch_size, lr), acc in acc.items():
-        writer.writerow([step, seed, batch_size, lr, acc])
+# with open("experiments/and/data/direct_and_loss_train.csv", "w", newline="") as f:
+#     writer = csv.writer(f)
+#     writer.writerow(["step", "seed", "batch size", "lr", "loss"])
+#     for (step, seed, batch_size, lr), loss in loss_train.items():
+#         writer.writerow([step, seed, batch_size, lr, loss])
+# with open("experiments/and/data/direct_and_loss_test.csv", "w", newline="") as f:
+#     writer = csv.writer(f)
+#     writer.writerow(["step", "seed", "batch size", "lr", "loss"])
+#     for (step, seed, batch_size, lr), loss in loss_test.items():
+#         writer.writerow([step, seed, batch_size, lr, loss])
+# with open("experiments/and/data/direct_and_acc_test.csv", "w", newline="") as f:
+#     writer = csv.writer(f)
+#     writer.writerow(["step", "seed", "batch size", "lr", "acc"])
+#     for (step, seed, batch_size, lr), acc in acc.items():
+#         writer.writerow([step, seed, batch_size, lr, acc])
