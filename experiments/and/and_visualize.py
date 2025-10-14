@@ -2,17 +2,16 @@
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
-plt.rcParams['axes.unicode_minus'] = False      # use '-' instead of '−'
-
+plt.rcParams['axes.unicode_minus'] = False
 
 df5 = pd.read_csv("experiments/and/data/direct_and_acc_test.csv")
 # idf5 = pd.read_csv("experiments/and/data/indirect_and_acc_test.csv")
 # tdf5 = pd.read_csv("experiments/and/data/type_and_acc_test.csv")
-# rdf5 = pd.read_csv("experiments/and/data/church_and_acc_test.csv")
+rdf5 = pd.read_csv("experiments/and/data/church_and_acc_test.csv")
 
-df5["model"]  = "D"     # name them as you like
+df5["model"]  = "D"
 # idf5["model"] = "I"
-# rdf5["model"] = "C"
+rdf5["model"] = "C"
 # tdf5["model"] = "T"
 
 bmidnight = (0, .329, .576)
@@ -28,15 +27,15 @@ palette = {
 }
 hue_order = ["D", "C", "T", "I"]
 
-sns.set_theme(style="white",     
+sns.set_theme(style="white",
               font="Futura",
-              rc={                                      # global overrides
+              rc={
                 "font.weight": "bold",
-                "xtick.labelsize": 15,   # ← increase these numbers
+                "xtick.labelsize": 15,
                 "ytick.labelsize": 15})
 
 # ── 2. concatenate ───────────────────────────────────
-big = pd.concat([df5], ignore_index=True)
+big = pd.concat([df5, rdf5], ignore_index=True)
 
 g = sns.relplot(
     data=big,
@@ -48,7 +47,7 @@ g = sns.relplot(
     hue_order=hue_order,
     palette=palette, 
     estimator="mean",           # average over seeds
-    ci="sd",                    # ±1 SD ribbon
+    ci="sd",
     facet_kws=dict(sharex="col", sharey=True),
     height=2.8, aspect=1.2
 )
