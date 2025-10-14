@@ -7,7 +7,6 @@ from cajal.typing import check
 from torch import nn, optim
 from torch import vmap
 from torch.utils.data import DataLoader, TensorDataset
-from functools import partial
 
 # ---------- Device ------------------
 if torch.backends.mps.is_available():
@@ -72,15 +71,15 @@ class ModelD(nn.Module):
 
         self.coand = coand
         check(self.coand, {'f': cbool, 'r': cbool})
+        self.coand_compiled = vmap(compile(self.coand), 
+                             in_dims=({'f': (TypedTensor(0, None)),
+                                       'r': (TypedTensor(0, None))},),
+                            out_dims=TypedTensor(0, None))
 
     def forward(self, x1, x2):
         env = {'f' : TypedTensor(self.netx1(x1).reshape(-1,4,2), cbool), 
                'r' : TypedTensor(self.netx2(x2).reshape(-1,4,2), cbool)}
-        coand_compiled = vmap(compile(self.coand), 
-                             in_dims=({'f': (TypedTensor(0, None)),
-                                       'r': (TypedTensor(0, None))},),
-                            out_dims=TypedTensor(0, None))
-        return coand_compiled(env).data
+        return self.coand_compiled(env).data
 
 # ---------- Training ----------------
 seeds = [0,1,2,3,4]
@@ -172,18 +171,18 @@ for seed in seeds:
 
 
 
-with open("experiments/and/data/church_and_loss_train.csv", "w", newline="") as f:
-    writer = csv.writer(f)
-    writer.writerow(["step", "seed", "batch size", "lr", "loss"])
-    for (step, seed, batch_size, lr), loss in loss_train.items():
-        writer.writerow([step, seed, batch_size, lr, loss])
-with open("experiments/and/data/church_and_loss_test.csv", "w", newline="") as f:
-    writer = csv.writer(f)
-    writer.writerow(["step", "seed", "batch size", "lr", "loss"])
-    for (step, seed, batch_size, lr), loss in loss_test.items():
-        writer.writerow([step, seed, batch_size, lr, loss])
-with open("experiments/and/data/church_and_acc_test.csv", "w", newline="") as f:
-    writer = csv.writer(f)
-    writer.writerow(["step", "seed", "batch size", "lr", "acc"])
-    for (step, seed, batch_size, lr), acc in acc.items():
-        writer.writerow([step, seed, batch_size, lr, acc])
+# with open("experiments/and/data/church_and_loss_train.csv", "w", newline="") as f:
+#     writer = csv.writer(f)
+#     writer.writerow(["step", "seed", "batch size", "lr", "loss"])
+#     for (step, seed, batch_size, lr), loss in loss_train.items():
+#         writer.writerow([step, seed, batch_size, lr, loss])
+# with open("experiments/and/data/church_and_loss_test.csv", "w", newline="") as f:
+#     writer = csv.writer(f)
+#     writer.writerow(["step", "seed", "batch size", "lr", "loss"])
+#     for (step, seed, batch_size, lr), loss in loss_test.items():
+#         writer.writerow([step, seed, batch_size, lr, loss])
+# with open("experiments/and/data/church_and_acc_test.csv", "w", newline="") as f:
+#     writer = csv.writer(f)
+#     writer.writerow(["step", "seed", "batch size", "lr", "acc"])
+#     for (step, seed, batch_size, lr), acc in acc.items():
+#         writer.writerow([step, seed, batch_size, lr, acc])
