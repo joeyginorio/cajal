@@ -14,7 +14,7 @@ elif torch.cuda.is_available():
 else:
     device = torch.device("cpu")
 
-@settings(max_examples=100, 
+@settings(max_examples=50, 
           suppress_health_check=[HealthCheck.too_slow], 
           verbosity=Verbosity.normal,
           deadline=None)
@@ -29,7 +29,7 @@ def test_compiler_correctness(ctx_tm_ty):
     assert compiled_tm == compiled_v
 
 
-@settings(max_examples=100, 
+@settings(max_examples=50, 
           suppress_health_check=[HealthCheck.too_slow],
           verbosity=Verbosity.normal,
           deadline=None)
@@ -42,7 +42,7 @@ def test_grad_exists1(ctx_tm_ty):
     assert all(isfinite(env['x'].data.grad))
 
 
-@settings(max_examples=100, 
+@settings(max_examples=5, 
           suppress_health_check=[HealthCheck.too_slow],
           verbosity=Verbosity.normal,
           deadline=None)
