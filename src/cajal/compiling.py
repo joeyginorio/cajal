@@ -173,8 +173,8 @@ def bases(ty: Ty):
 
         case TyBool():
             basis_mat = torch.eye(2, device=device)
-            basis_tt = basis_mat[:,[0]]
-            basis_ff = basis_mat[:,[1]]
+            basis_tt = basis_mat[:,0]
+            basis_ff = basis_mat[:,1]
             return [TypedTensor(basis_tt, TyBool()), 
                     TypedTensor(basis_ff, TyBool())]
         
