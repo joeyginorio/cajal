@@ -235,7 +235,7 @@ def gen_succ(draw):
 def gen_ty(draw):
     return draw(one_of_weighted([
                     (gen_ty_bool(),3), 
-                    (gen_ty_nat(),2), 
+                    (gen_ty_nat(),1), 
                     (gen_ty_fun(), 1)
                 ]))
 
