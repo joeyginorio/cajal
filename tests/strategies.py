@@ -109,7 +109,7 @@ def gen_prog_bool(draw, ctx_neg: NCtx, ctx_pos: PCtx):
 
                 iter = draw(gen_prog_bool(ctx_neg2, ctx_pos2))
 
-                return TmIter(base, name, iter, n)
+                return TmIter(base, name, rec, n)
 
     if ctx_neg:
         (tm, ty_neg), *ctx_neg_remain = ctx_neg
@@ -161,12 +161,12 @@ def gen_prog_nat(draw, ctx_neg: NCtx, ctx_pos: PCtx):
                 random_n = randint(0, 5)
                 if random_n <= 3:
                     base = draw(gen_prog_nat(ctx_neg, ctx_pos_remain))
-                    iter = TmVar(name)
-                    return TmIter(base, name, iter, n)
+                    rec = TmVar(name)
+                    return TmIter(base, name, rec, n)
                 else:
                     base = draw(gen_prog_nat(ctx_neg1, ctx_pos1))
-                    iter = draw(gen_prog_nat(ctx_neg2, ctx_pos2  + [(name, TyNat())]))
-                    return TmIter(base, name, iter, n)
+                    rec = draw(gen_prog_nat(ctx_neg2, ctx_pos2  + [(name, TyNat())]))
+                    return TmIter(base, name, rec, n)
 
     if ctx_neg:
         (tm, ty_neg), *ctx_neg_remain = ctx_neg
