@@ -70,11 +70,7 @@ def compile(tm: Tm) -> MultilinearMap:
         case TmFun(x, _, tm_body):
             body = compile(tm_body)
             return lambda env: LinearMap(lambda arg: body(env | {x: arg}), tm.ty_checked)
-        
-        # tensor tensor (tensor.__matmul__) good
-        # tensor lambda (tensor.__matmul__)
-        # lambda lambda (linmap.__call__) good
-        # lambda tensor (linmap.__call__) good
+
         case TmApp(tm1, tm2):
             f = compile(tm1)
             x = compile(tm2)
