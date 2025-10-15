@@ -28,13 +28,15 @@ def compile(tm: Tm) -> MultilinearMap:
             return lambda env: ff
         
         case TmZero():
-            zero = TypedTensor(tensor([1.], requires_grad=False, device=device), TyNat())
+            _zero = torch.zeros(10, requires_grad=False, device=device)
+            _zero[0] = 1.
+            zero = TypedTensor(_zero, TyNat())
             return lambda env: zero
 
         case TmSucc(tm_n):
             n = compile(tm_n)
             z = torch.tensor([0.], requires_grad=False, device=device)
-            return lambda env: TypedTensor(torch.concat([z, n(env).data]), TyNat())
+            return lambda env: TypedTensor(torch.concat([z, n(env).data[:9]]), TyNat())
         
         case TmIf(tm1, tm2, tm3):
             b = compile(tm1)
