@@ -10,7 +10,7 @@ input: (mnist image, mnist image)
 output: 1 if both images not even 0 otherwise
 """
 
-train_ds = datasets.MNIST("data", train=True, download=True)
+train_ds = datasets.MNIST("experiments/eq/data", train=True, download=True)
 
 xs1 = train_ds.data[:30000].float() / 255.0
 xs2 = train_ds.data[30000:].float() / 255.0
@@ -29,7 +29,7 @@ torch.save(xs1, "experiments/eq/data/train_eq_xs1.pt")
 torch.save(xs2, "experiments/eq/data/train_eq_xs2.pt")
 torch.save(ys, "experiments/eq/data/train_eq_ys.pt")
 
-test_ds = datasets.MNIST("data", train=False, download=True)
+test_ds = datasets.MNIST("experiments/eq/data", train=False, download=True)
 
 xs1 = test_ds.data[:5000].float() / 255.0
 xs2 = test_ds.data[5000:].float() / 255.0
