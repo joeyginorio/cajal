@@ -50,7 +50,6 @@ class ModelD(nn.Module):
     def forward(self, x1, x2):
         y1 = self.netx1(x1)
         y2 = self.netx2(x2)
-        # ys = torch.cat([y1,y2],dim=-1)
         ys = torch.vmap(torch.kron)(y1,y2)
         return self.random_ite(ys)
 
