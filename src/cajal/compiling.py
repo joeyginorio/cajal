@@ -192,6 +192,16 @@ def bases(ty: Ty):
                 bases.append(reshape_with_ty(basis_mat[:,[i]], ty))
             return bases
 
+def apply_n(f, n):
+
+    def composed(x):
+        for _ in range(n):
+            x = f(x)
+        return x
+    
+    return composed
+
+
 
 def dim(ty: Ty):
     match ty:
