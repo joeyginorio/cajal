@@ -178,6 +178,11 @@ def bases(ty: Ty):
             return [TypedTensor(basis_tt, TyBool()), 
                     TypedTensor(basis_ff, TyBool())]
         
+        case TyNat():
+            basis_mat = torch.eye(10, device=device)
+            basis_i = [basis_mat[:,i] for i in range(10)]
+            return [TypedTensor(basis, TyNat()) for basis in basis_i]
+        
         case TyFun(_, _):
             dim_ty = dim(ty)
             basis_mat = torch.eye(dim_ty, device=device)
