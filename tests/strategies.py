@@ -107,7 +107,7 @@ def gen_prog_bool(draw, ctx_neg: NCtx, ctx_pos: PCtx):
                 name = gen_fresh(ctx_pos + names_neg)
                 ctx_pos2 += [(name, TyBool())]
 
-                iter = draw(gen_prog_bool(ctx_neg2, ctx_pos2))
+                rec = draw(gen_prog_bool(ctx_neg2, ctx_pos2))
 
                 return TmIter(base, name, rec, n)
 
