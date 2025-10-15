@@ -49,6 +49,24 @@ def compile(tm: Tm) -> MultilinearMap:
             
             return execute
         
+        case TmIter(tm1, y, tm2, tm3):
+            base = compile(tm1)
+            rec = compile(tm2)
+            num = compile(tm3)
+
+            def execute(env):
+                n = num(env).data
+                base_val = base(env)
+                rec_f = lambda y_tgt: rec(env | {y: y_tgt})
+
+                total = n[0] * base_val
+                for i in range(1, len(n)):
+                    total += n[i] * apply_n(rec_f, i)(base_val)
+                
+                return total
+            
+            return execute
+        
         case TmFun(x, _, tm_body):
             body = compile(tm_body)
             return lambda env: LinearMap(lambda arg: body(env | {x: arg}), tm.ty_checked)
