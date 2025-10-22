@@ -3,15 +3,19 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 plt.rcParams['axes.unicode_minus'] = False
+plt.rcParams.update({
+    "pdf.fonttype": 42,
+    "ps.fonttype": 42
+})
 
-df5 = pd.read_csv("experiments/and/data/direct_and_acc_test.csv")
-# idf5 = pd.read_csv("experiments/and/data/indirect_and_acc_test.csv")
-tdf5 = pd.read_csv("experiments/and/data/type_and_acc_test.csv")
-rdf5 = pd.read_csv("experiments/and/data/church_and_acc_test.csv")
+df5 = pd.read_csv("experiments/eq/data/direct_eq_acc_test.csv")
+# idf5 = pd.read_csv("experiments/eq/data/indirect_eq_acc_test.csv")
+tdf5 = pd.read_csv("experiments/eq/data/type_eq_acc_test.csv")
+# rdf5 = pd.read_csv("experiments/eq/data/church_eq_acc_test.csv")
 
 df5["model"]  = "D"
 # idf5["model"] = "I"
-rdf5["model"] = "C"
+# rdf5["model"] = "C"
 tdf5["model"] = "T"
 
 bmidnight = (0, .329, .576)
@@ -22,10 +26,10 @@ green = (0, 0.5, 0)
 palette = {
     "D":   bmidnight,      # bmidnight
     # "I": bcayenne,       # bcayenne
-    "C": purple,
+    # "C": purple,
     "T": green
 }
-hue_order = ["D", "C", "T"]
+hue_order = ["D", "T"]
 
 sns.set_theme(style="white",
               font="Futura",
@@ -35,7 +39,7 @@ sns.set_theme(style="white",
                 "ytick.labelsize": 15})
 
 # ── 2. concatenate ───────────────────────────────────
-big = pd.concat([df5, tdf5, rdf5], ignore_index=True)
+big = pd.concat([df5, tdf5], ignore_index=True)
 
 g = sns.relplot(
     data=big,
@@ -93,15 +97,15 @@ for r, lr_val in enumerate(g.row_names):             # rows = learning rates
 
 for ax_row in g.axes:
     for ax in ax_row:
-        ax.set_ylim(0.7, 1.0)
+        ax.set_ylim(0.5, 1.0)
 
 g.set_axis_labels("", "")        # wipes the “step” / “PSNR” strings
 g.fig.supxlabel("Steps",  y=-0.01, fontsize=24, fontweight="bold")      # global x-axis label
 g.fig.supylabel("Accuracy", x=-0.01, fontsize=24, fontweight="bold")       # global y-axis label
-g.fig.suptitle("AND Dynamics", y=1.02, fontsize=28, fontweight="bold")       # global y-axis label
+g.fig.suptitle("EQ Dynamics", y=1.02, fontsize=28, fontweight="bold")       # global y-axis label
 
 g.fig.savefig(
-    "experiments/and/figures/and_acc_global.pdf",
+    "experiments/eq/figures/eq_acc_global.pdf",
     format="pdf",
     dpi=900,              # controls resolution of any raster elements
     bbox_inches="tight",  # trims excess whitespace
