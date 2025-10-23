@@ -59,9 +59,15 @@ def compile(tm: Tm) -> MultilinearMap:
                 base_val = base(env)
                 rec_f = lambda y_tgt: rec(env | {y: y_tgt})
 
-                total = n[0] * base_val
+                outs = [base_val]
+                cur = base_val
+                for _ in range(1, len(n)):
+                    cur = rec_f(cur)
+                    outs.append(cur)
+
+                total = n[0] * outs[0]
                 for i in range(1, len(n)):
-                    total += n[i] * apply_n(rec_f, i)(base_val)
+                    total += n[i] * outs[i]
                 
                 return total
             
@@ -218,3 +224,234 @@ def reshape_with_ty(tens: Tensor, ty: Ty):
             return TypedTensor(torch.reshape(tens, (dim(ty_out), dim(ty_in))), ty)
         case _:
             return TypedTensor(tens, ty)
+
+def test1():
+    tm = TmFun('x', TyBool(), TmVar('x'))
+    check(tm, {})
+    c_tm = compile(tm)
+    e_tm = c_tm({})
+    print(mat_of_lmap(e_tm).data)
+
+def test2():
+    tm = TmFun('x', TyBool(),
+               TmIf(TmVar('x'),
+                    TmTrue(),
+                    TmFalse()))
+    check(tm, {})
+    c_tm = compile(tm)
+    e_tm = c_tm({})
+    print(mat_of_lmap(e_tm).data)
+
+def test3():
+    tm = TmFun('x', TyBool(),
+               TmIf(TmVar('x'),
+                    TmTrue(),
+                    TmTrue()))
+    check(tm, {})
+    c_tm = compile(tm)
+    e_tm = c_tm({})
+    print(mat_of_lmap(e_tm).data)
+
+def test4():
+    tm = TmFun('x', TyFun(TyBool(), TyBool()), TmVar('x'))
+    check(tm, {})
+    c_tm = compile(tm)
+    e_tm = c_tm({})
+    print(mat_of_lmap(e_tm).data)
+
+def test5():
+    tm = TmFun('x', TyFun(TyBool(), TyBool()),
+               TmIf(TmApp(TmVar('x'), TmTrue()),
+                    TmFun('y', TyBool(), TmVar('y')),
+                    TmFun('z', TyBool(), TmVar('z'))))
+    check(tm, {})
+    c_tm = compile(tm)
+    e_tm = c_tm({})
+    print(mat_of_lmap(e_tm).data)
+
+def test6():
+    tm = TmFun('x', TyFun(TyBool(), TyBool()),
+               TmIf(TmApp(TmVar('x'), TmTrue()),
+                    TmApp(TmFun('y', TyBool(), TmVar('y')), TmTrue()),
+                    TmApp(TmFun('z', TyBool(), TmVar('z')), TmTrue())))
+    check(tm, {})
+    c_tm = compile(tm)
+    e_tm = c_tm({})
+    print(mat_of_lmap(e_tm).data)
+
+def test7():
+    iden = TypedTensor(torch.eye(4, device=device), TyFun(TyFun(TyBool(), TyBool()),TyFun(TyBool(), TyBool())))
+    tm = TmApp(TmVar('f'), TmFun('x', TyBool(), TmVar('x')))
+    check(tm, {'f' : TyFun(TyFun(TyBool(), TyBool()),TyFun(TyBool(), TyBool()))})
+    tm_compiled = compile(tm)
+    res = tm_compiled({'f': iden})
+    return res
+
+def test8():
+    iden = TypedTensor(torch.eye(4, device=device), TyFun(TyFun(TyBool(), TyBool()),TyFun(TyBool(), TyBool())))
+    arg = TypedTensor(torch.tensor([[1.,1.],[0.,0.]], device=device), TyFun(TyBool(), TyBool()))
+    tm = TmApp(TmVar('f'), TmVar('x'))
+    check(tm, {'f' : TyFun(TyFun(TyBool(), TyBool()), TyFun(TyBool(), TyBool())),
+               'x': TyFun(TyBool(), TyBool())})
+    tm_compiled = compile(tm)
+    res = tm_compiled({'f': iden, 'x': arg})
+    return res
+
+def test9():
+    arg = TypedTensor(torch.tensor([1.,1.], device=device), TyBool())
+    tm = TmApp(TmFun('y', TyBool(), TmVar('y')), TmVar('x'))
+    check(tm, {'x': TyBool()})
+    tm_compiled = compile(tm)
+    res = tm_compiled({'x': arg})
+    return res
+
+def test10():
+    iden = TypedTensor(torch.eye(2, device=device), TyFun(TyBool(), TyBool()))
+    tm = TmApp(TmVar('f'), TmFalse())
+    check(tm, {'f' : TyFun(TyBool(), TyBool())})
+    tm_compiled = compile(tm)
+    res = tm_compiled({'f': iden})
+    return res
+
+def test11():
+    tm = TmIter(TmTrue(),
+            'y',
+            TmApp(
+                TmFun('x', TyBool(), TmIf(TmVar('x'), TmFalse(), TmTrue())), 
+                TmVar('y')), 
+            TmSucc(TmSucc(TmZero())))
+    check(tm, {})
+    c_tm = compile(tm)
+    return c_tm({})
+
+def test12():
+    tm = TmFun('z', TyBool(),
+               TmIter(TmVar('z'),
+                'y',
+                TmApp(
+                    TmFun('x', TyBool(), TmIf(TmVar('x'), TmFalse(), TmTrue())), 
+                    TmVar('y')), 
+                TmSucc(TmSucc(TmZero()))))
+    check(tm, {})
+    c_tm = compile(tm)
+    return c_tm({})
+
+def test13():
+    tm = TmFun('z', TyBool(),
+               TmIter(TmVar('z'),
+                'y',
+                TmApp(
+                    TmFun('x', TyBool(), TmIf(TmVar('x'), TmFalse(), TmTrue())), 
+                    TmVar('y')), 
+                    TmSucc(TmZero())))
+    check(tm, {})
+    c_tm = compile(tm)
+    return c_tm({})
+
+def test14():
+    tm = TmFun('z', TyBool(),
+               TmIter(TmVar('z'),
+                'y',
+                TmApp(
+                    TmFun('x', TyBool(), TmIf(TmVar('x'), TmFalse(), TmTrue())), 
+                    TmVar('y')), 
+                    TmVar('n')))
+    check(tm, {'n': TyNat()})
+    c_tm = compile(tm)
+    return c_tm({'n': torch.tensor([1.3, 2.3, 3.4], device=device)})
+
+
+def test14():
+    tm = TmFun('n', TyNat(), TmVar('n'))
+    check(tm, {})
+    c_tm = compile(tm)
+    return c_tm({})
+
+def test15():
+    tm = TmFun('n', TyNat(), TmIter(TmSucc(TmVar('n')), 'y', TmSucc(TmVar('y')), TmZero()))
+    check(tm, {})
+    c_tm = compile(tm)
+    return c_tm({})
+
+def test16():
+    tm = TmApp(
+        TmVar('f'),
+        TmSucc(TmZero()))
+    iden = TypedTensor(torch.eye(10, device=device), TyFun(TyNat(), TyNat()))
+    check(tm, {'f' : TyFun(TyNat(), TyNat())})
+    c_tm = compile(tm)
+    return c_tm({'f': iden})
+
+def test17():
+    tm = TmApp(
+        TmVar('f'),
+        TmSucc(TmZero()))
+    iden = TypedTensor(torch.eye(10, device=device), TyFun(TyNat(), TyNat()))
+    f_iden = LinearMap(lambda x: (4 * (iden + iden)) @ x, TyFun(TyNat(), TyNat()))
+    check(tm, {'f' : TyFun(TyNat(), TyNat())})
+    c_tm = compile(tm)
+    return c_tm({'f': f_iden})
+
+def test18():
+    tm = TmApp(
+        TmVar('f'),
+        TmSucc(TmZero()))
+    iden = TypedTensor(torch.eye(10, device=device), TyFun(TyNat(), TyNat()))
+    f_iden = LinearMap(lambda x: (4 * (iden + iden)) @ x, TyBool())
+    check(tm, {'f' : TyFun(TyNat(), TyNat())})
+    c_tm = compile(tm)
+    return c_tm({'f': f_iden})
+
+def test19():
+    base_val = TypedTensor(torch.eye(10, device=device).unsqueeze(0), TyNat())
+    n_val = TypedTensor(torch.ones(10, device=device), TyNat())
+
+    tm = TmIter(TmVar('base'), 
+                'y', 
+                TmApp(TmVar('f'), TmVar('y')),
+                TmVar('n'))
+    conv = torch.nn.Conv2d(1,1,
+                           kernel_size=7, 
+                           stride=1, 
+                           padding=3, 
+                           bias=False, 
+                           padding_mode="zeros")
+    conv.to(device)
+
+    def f_val(x):
+        return TypedTensor(conv(x.data), x.ty)
+    c_tm = compile(tm)
+    
+    return c_tm({'f': f_val, 'base': base_val, 'n': n_val})
+
+def test20(weights):
+    base_val = TypedTensor(torch.eye(10, device=device).unsqueeze(0), TyNat())
+    n_val = TypedTensor(torch.ones(10, device=device), TyNat())
+
+    tm = TmIter(TmVar('base'), 
+                'y', 
+                TmApp(TmVar('f'), TmVar('y')),
+                TmVar('n'))
+    conv = torch.nn.Conv2d(1,1,
+                           kernel_size=7, 
+                           stride=1, 
+                           padding=3, 
+                           bias=False, 
+                           padding_mode="zeros")
+    conv.to(device)
+    conv.weight = weights
+
+    def f_val(x):
+        return TypedTensor(conv(x.data), TyFun(TyBool(), TyBool()))
+    c_tm = compile(tm)
+    c_tm = torch.vmap(c_tm,
+                      in_dims=({'f': None,
+                                'base': TypedTensor(0, None),
+                                'n': TypedTensor(0, None)},),
+                      out_dims=TypedTensor(0, None))
+    
+    base_val = torch.randn(5,1,10,10,device=device)
+    num_val = torch.randn(5,10,device=device)
+    return c_tm({'f': f_val,
+                 'base': TypedTensor(base_val, TyBool()),
+                 'n': TypedTensor(num_val, TyBool())})
