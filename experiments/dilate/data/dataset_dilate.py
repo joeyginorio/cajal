@@ -19,7 +19,7 @@ def dilate_n_td(x, n):
         x_dilated = kornia.morphology.dilation(x.view(1,1,28,28), filt)
         # after dilating the image we need to
         # interpolate
-        x = torch.lerp(x, x_dilated, .3)
+        x = torch.lerp(x, x_dilated, .7)
     return x
 
 def dilate_n_lr(x, n):
@@ -31,7 +31,7 @@ def dilate_n_lr(x, n):
         x_dilated = kornia.morphology.dilation(x.view(1,1,28,28), filt)
         # after dilating the image we need to
         # interpolate
-        x = torch.lerp(x, x_dilated, .3)
+        x = torch.lerp(x, x_dilated, .7)
     return x
 
 transform = transforms.Compose([
