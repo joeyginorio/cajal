@@ -56,7 +56,8 @@ class ModelD(nn.Module):
             nn.ReLU(),
             nn.MaxPool2d(3),
             nn.Flatten(),
-            nn.Linear(16*9*9,10) # B x 10
+            nn.Linear(16*9*9,10), # B x 10
+            nn.Tanh()
         )
 
         self.determine_conv = nn.Sequential(
@@ -68,7 +69,8 @@ class ModelD(nn.Module):
             nn.ReLU(),
             nn.MaxPool2d(3),
             nn.Flatten(),
-            nn.Linear(16*9*9,13*13), # B x 25
+            nn.Linear(16*9*9,13*13), # B x 13*13
+            nn.Tanh(),
             nn.Unflatten(1, (1,1,13,13)) # B x (1,1,5,5)
         )
 
@@ -88,15 +90,12 @@ class ModelD(nn.Module):
         base_val = x # Bx28x28
         num_val = self.determine_n(x) # Bx10
 
-        # w = self.determine_conv(x)
-        # w *= .1
-
         def iterator(t):
             xd = t.data.view(-1, 1, 28, 28)             # (B_in, Cin=1, H, W)
             # assert 1==2
 
             w = self.determine_conv(xd)
-            w *= .1
+            # w *= .1
 
             xd = F.pad(xd, (6, 6, 6, 6), mode='constant', value=-1.0)
             B, Cin, H, W = xd.shape
@@ -116,14 +115,12 @@ class ModelD(nn.Module):
         return self.p(env).data.view(-1,28,28)
     
 
+
 # ---------- Training ----------------
-# seeds = [0]
-seeds = [0]
-# batch_sizes = [8,32,128,512]
-# batch_sizes = [64,256,512,1024]
-batch_sizes = [64]
-# learning_rates = [.01, .001, .0001, .00001]
-learning_rates = [.0001]
+seeds = [0,1,2]
+batch_sizes = [32,64,128]
+learning_rates = [.001, .0005, .0001]
+# learning_rates = [.001]
 idxs = list(range(20))
 
 # # CNN measurements
@@ -191,7 +188,7 @@ for seed in seeds:
                 output_test[(0, seed, batch_size, lr, idx)] = output
         
             step = 1
-            freq = 100
+            freq = 20
             for epoch in range(10):
                 print(f"Epoch: {epoch}, Lr: {lr}, Bs: {batch_size}, Seed: {seed}")
 
@@ -201,23 +198,18 @@ for seed in seeds:
                     output = modelD(data)
                     loss = criterion(output, target)
                     loss.backward()
+
                     
                     max_norm = 1.0
                     total_norm = torch.nn.utils.clip_grad_norm_(modelD.parameters(), max_norm)
                     optimizer.step()
 
-                    # Record training information
-                    # print(f"{loss=}")
-                    # print(f"{step=}")
-                    # print(f"{total_norm=}")
-                    # print(f"{output=}")
-                    # print(f"{target=}")
                     assert torch.isfinite(loss).item()
                     loss_train[(step, seed, batch_size, lr)] = loss.item()
                     step += 1
 
                     if step % freq == 0:
-                        if step >= 300:
+                        if step >= 200:
                             freq = 100
 
                         test_loss = 0.0
@@ -249,7 +241,7 @@ for seed in seeds:
                         for idx in idxs:
                             x = test_ds[idx][0].unsqueeze(0).to(device)  # add batch dimension: (1,1,28,28)
                             output = modelD(x).squeeze().tolist()
-                            output_test[(0, seed, batch_size, lr, idx)] = output
+                            output_test[(step, seed, batch_size, lr, idx)] = output
 
 
 
