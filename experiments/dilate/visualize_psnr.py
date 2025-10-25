@@ -44,11 +44,14 @@ g = sns.relplot(
     hue="model",
     hue_order=hue_order,
     palette=palette, 
-    estimator="mean",
-    ci="sd",
+    estimator="mean",           # center = mean
+    errorbar=("pi", 95),        # ribbon = 5–95% percentile interval (asymmetric)
     facet_kws=dict(sharex="col", sharey=True),
     height=2.8, aspect=1.2
 )
+
+g.set(ylim=(13, 25))
+# g.set(xlim=(20, None))
 
 g.set_axis_labels("step", "PSNR")
 
