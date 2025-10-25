@@ -55,12 +55,13 @@ class ModelI(nn.Module):
         return self.net(x)
 
 # ---------- Training ----------------
-seeds = [0]
-# batch_sizes = [8,32,128,512]
-# batch_sizes = [64,256,512,1024]
-batch_sizes = [64]
-# learning_rates = [.01, .001, .0001, .00001]
-learning_rates = [.0001]
+# seeds = [0]
+seeds = [0,1,2]
+# batch_sizes = [32]
+batch_sizes = [32,64,128]
+# learning_rates = [.001]
+learning_rates = [.001, .0005, .0001]
+# learning_rates = [.001]
 idxs = list(range(20))
 
 # CNN measurements
@@ -128,7 +129,7 @@ for seed in seeds:
                 output_test[(0, seed, batch_size, lr, idx)] = output
         
             step = 1
-            freq = 100
+            freq = 20
             for epoch in range(10):
                 print(f"Epoch: {epoch}, Lr: {lr}, Bs: {batch_size}, Seed: {seed}")
 
@@ -145,7 +146,7 @@ for seed in seeds:
                     step += 1
 
                     if step % freq == 0:
-                        if step >= 300:
+                        if step >= 200:
                             freq = 100
 
                         test_loss = 0.0
@@ -178,7 +179,7 @@ for seed in seeds:
                         for idx in idxs:
                             x = test_ds[idx][0].unsqueeze(0).to(device)  # add batch dimension: (1,1,28,28)
                             output = modelI(x).squeeze().tolist()
-                            output_test[(0, seed, batch_size, lr, idx)] = output
+                            output_test[(step, seed, batch_size, lr, idx)] = output
 
 
 
