@@ -57,7 +57,6 @@ class ModelD(nn.Module):
             nn.MaxPool2d(3),
             nn.Flatten(),
             nn.Linear(16*9*9,10), # B x 10
-            nn.Tanh()
         )
 
         self.determine_conv = nn.Sequential(
@@ -71,7 +70,9 @@ class ModelD(nn.Module):
             nn.Flatten(),
             nn.Linear(16*9*9,13*13), # B x 13*13
             nn.Tanh(),
+            # nn.Hardtanh(min_val=-0.0059, max_val=0.0059),
             nn.Unflatten(1, (1,1,13,13)) # B x (1,1,5,5)
+            
         )
 
         self.p = cj.TmIter(cj.TmVar('base'), 
@@ -117,10 +118,13 @@ class ModelD(nn.Module):
 
 
 # ---------- Training ----------------
-seeds = [0,1,2]
+# seeds = [0]
+# seeds = [0,1,2]
+seeds = [3,4,5,6,7,8,9]
+# batch_sizes = [32]
 batch_sizes = [32,64,128]
-learning_rates = [.001, .0005, .0001]
 # learning_rates = [.001]
+learning_rates = [.001, .0005, .0001]
 idxs = list(range(20))
 
 # # CNN measurements
@@ -245,24 +249,24 @@ for seed in seeds:
 
 
 
-with open("experiments/dilate/data/direct_loss_train.csv", "w", newline="") as f:
+with open("experiments/dilate/data/direct_loss_train.csv", "a", newline="") as f:
     writer = csv.writer(f)
-    writer.writerow(["step", "seed", "batch size", "lr", "loss"])
+    # writer.writerow(["step", "seed", "batch size", "lr", "loss"])
     for (step, seed, batch_size, lr), loss in loss_train.items():
         writer.writerow([step, seed, batch_size, lr, loss])
-with open("experiments/dilate/data/direct_loss_test.csv", "w", newline="") as f:
+with open("experiments/dilate/data/direct_loss_test.csv", "a", newline="") as f:
     writer = csv.writer(f)
-    writer.writerow(["step", "seed", "batch size", "lr", "loss"])
+    # writer.writerow(["step", "seed", "batch size", "lr", "loss"])
     for (step, seed, batch_size, lr), loss in loss_test.items():
         writer.writerow([step, seed, batch_size, lr, loss])
-with open("experiments/dilate/data/direct_output_test.csv", "w", newline="") as f:
+with open("experiments/dilate/data/direct_output_test.csv", "a", newline="") as f:
     writer = csv.writer(f)
-    writer.writerow(["step", "seed", "batch size", "lr", "idx", "output"])
+    # writer.writerow(["step", "seed", "batch size", "lr", "idx", "output"])
     for (step, seed, batch_size, lr, idx), output in output_test.items():
         writer.writerow([step, seed, batch_size, lr, idx, output])
-with open("experiments/dilate/data/direct_psnr_test.csv", "w", newline="") as f:
+with open("experiments/dilate/data/direct_psnr_test.csv", "a", newline="") as f:
     writer = csv.writer(f)
-    writer.writerow(["step", "seed", "batch size", "lr", "idx", "psnr"])
+    # writer.writerow(["step", "seed", "batch size", "lr", "idx", "psnr"])
     for (step, seed, batch_size, lr), snr in psnr_test.items():
         writer.writerow([step, seed, batch_size, lr, idx, snr])
 

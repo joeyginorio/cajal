@@ -56,69 +56,26 @@ class ModelD(nn.Module):
             nn.ReLU(),
             nn.MaxPool2d(3),
             nn.Flatten(),
-            nn.Linear(16*9*9,10), # B x 10
-            nn.Tanh()
+            nn.Linear(16*9*9,1)
         )
 
-        self.determine_conv = nn.Sequential(
-            nn.Flatten(),
-            nn.Unflatten(1, (1,28,28)),
-            nn.Conv2d(1,8,5, padding=2),
-            nn.ReLU(),
-            nn.Conv2d(8,16,5,padding=2),
-            nn.ReLU(),
-            nn.MaxPool2d(3),
-            nn.Flatten(),
-            nn.Linear(16*9*9,13*13), # B x 13*13
-            nn.Tanh(),
-            nn.Unflatten(1, (1,1,13,13)) # B x (1,1,5,5)
+        self.random_iter = nn.Sequential(
+            nn.Linear(784,784)
         )
-
-        self.p = cj.TmIter(cj.TmVar('base'), 
-                           'y', 
-                           cj.TmApp(cj.TmVar('iterator'), cj.TmVar('y')),
-                           cj.TmVar('num'))
-
-        self.p = torch.vmap(compile(self.p),
-                            in_dims=({'base': (TypedTensor(0, None)),
-                                      'iterator': None,
-                                      'num': (TypedTensor(0, None))},),
-                                      out_dims=TypedTensor(0, None))
-
 
     def forward(self, x):
-        base_val = x # Bx28x28
+        base_val = x.view(-1,784) # Bx28x28
         num_val = self.determine_n(x) # Bx10
-
-        def iterator(t):
-            xd = t.data.view(-1, 1, 28, 28)             # (B_in, Cin=1, H, W)
-            # assert 1==2
-
-            w = self.determine_conv(xd)
-            # w *= .1
-
-            xd = F.pad(xd, (6, 6, 6, 6), mode='constant', value=-1.0)
-            B, Cin, H, W = xd.shape
-
-            # Fold batch into channels
-            xg = xd.reshape(1, B * Cin, H, W)            # (1, B*Cin, H, W)
-            wg = w.reshape(B * w.shape[1], Cin, 13, 13)    # (B*Cout, Cin, Kh, Kw)
-
-            yg = F.conv2d(xg, wg, groups=B)   # (1, B*Cout, Hout, Wout)
-            y  = yg.reshape(B, w.shape[1], yg.shape[-2], yg.shape[-1])  # (B, Cout, Hout, Wout)
-
-            return TypedTensor(y, cj.TyBool())
-
-        env = {'base' : TypedTensor(base_val, cj.TyBool()),
-               'iterator' : iterator,
-               'num' : TypedTensor(num_val, cj.TyNat())}
-        return self.p(env).data.view(-1,28,28)
-    
+        ys = torch.vmap(torch.kron)(base_val, num_val)
+        return self.random_iter(ys).view(-1,28,28)
 
 
 # ---------- Training ----------------
-seeds = [0,1,2]
+# seeds = [0,1,2]
+# seeds = [0,1,2,3,4,5,6,7,8,9]
+seeds = [0]
 batch_sizes = [32,64,128]
+# batch_sizes = [32]
 learning_rates = [.001, .0005, .0001]
 # learning_rates = [.001]
 idxs = list(range(20))
@@ -245,52 +202,52 @@ for seed in seeds:
 
 
 
-with open("experiments/dilate/data/direct_loss_train.csv", "w", newline="") as f:
+with open("experiments/dilate/data/type_loss_train3.csv", "w", newline="") as f:
     writer = csv.writer(f)
     writer.writerow(["step", "seed", "batch size", "lr", "loss"])
     for (step, seed, batch_size, lr), loss in loss_train.items():
         writer.writerow([step, seed, batch_size, lr, loss])
-with open("experiments/dilate/data/direct_loss_test.csv", "w", newline="") as f:
+with open("experiments/dilate/data/type_loss_test3.csv", "w", newline="") as f:
     writer = csv.writer(f)
     writer.writerow(["step", "seed", "batch size", "lr", "loss"])
     for (step, seed, batch_size, lr), loss in loss_test.items():
         writer.writerow([step, seed, batch_size, lr, loss])
-with open("experiments/dilate/data/direct_output_test.csv", "w", newline="") as f:
+with open("experiments/dilate/data/type_output_test3.csv", "w", newline="") as f:
     writer = csv.writer(f)
     writer.writerow(["step", "seed", "batch size", "lr", "idx", "output"])
     for (step, seed, batch_size, lr, idx), output in output_test.items():
         writer.writerow([step, seed, batch_size, lr, idx, output])
-with open("experiments/dilate/data/direct_psnr_test.csv", "w", newline="") as f:
+with open("experiments/dilate/data/type_psnr_test3.csv", "w", newline="") as f:
     writer = csv.writer(f)
     writer.writerow(["step", "seed", "batch size", "lr", "idx", "psnr"])
     for (step, seed, batch_size, lr), snr in psnr_test.items():
         writer.writerow([step, seed, batch_size, lr, idx, snr])
 
 
-idxs = [0, 11, 12, 3, 4, 5, 6]
+# idxs = [0, 11, 12, 3, 4, 5, 6]
 
-fig, axes = plt.subplots(nrows=7, ncols=2, figsize=(6, 8))
-for row, idx in enumerate(idxs):
-    # prepare input
-    x = test_ds[idx][0]
-    xim = x.squeeze().detach()
-    with torch.no_grad():
-        modelD.to('cpu')
-        y = modelD(x.unsqueeze(0))
-    yim = y.squeeze().detach()
+# fig, axes = plt.subplots(nrows=7, ncols=2, figsize=(6, 8))
+# for row, idx in enumerate(idxs):
+#     # prepare input
+#     x = test_ds[idx][0]
+#     xim = x.squeeze().detach()
+#     with torch.no_grad():
+#         modelD.to('cpu')
+#         y = modelD(x.unsqueeze(0))
+#     yim = y.squeeze().detach()
 
-    # plot input on the left, output on the right
-    ax_in  = axes[row, 0]
-    ax_out = axes[row, 1]
+#     # plot input on the left, output on the right
+#     ax_in  = axes[row, 0]
+#     ax_out = axes[row, 1]
 
-    ax_in.imshow(xim,  cmap="gray", vmin=0, vmax=1)
-    ax_in.set_title(f"Input #{idx}")
-    ax_in.axis("off")
+#     ax_in.imshow(xim,  cmap="gray", vmin=0, vmax=1)
+#     ax_in.set_title(f"Input #{idx}")
+#     ax_in.axis("off")
 
-    ax_out.imshow(yim, cmap="gray", vmin=0, vmax=1)
-    ax_out.set_title(f"Output #{idx}")
-    ax_out.axis("off")
+#     ax_out.imshow(yim, cmap="gray", vmin=0, vmax=1)
+#     ax_out.set_title(f"Output #{idx}")
+#     ax_out.axis("off")
 
-plt.tight_layout()
-plt.show()
+# plt.tight_layout()
+# plt.show()
 

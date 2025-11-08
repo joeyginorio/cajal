@@ -73,5 +73,13 @@ torch.save(ys_train, "experiments/dilate/data/train_ys.pt")
 torch.save(xs_test, "experiments/dilate/data/test_xs.pt")
 torch.save(ys_test, "experiments/dilate/data/test_ys.pt")
 
+# Template for generating example figures
+# ----------------------------------------
+# plt.figure(figsize=(4,4), dpi=300)
+# plt.imshow(xs_test[10],cmap="grey")
+# plt.axis("off")
+# plt.savefig("experiments/dilate/figures/x1_test.pdf", format="pdf", bbox_inches="tight", pad_inches=0)
+# plt.show()
+
 
 

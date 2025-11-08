@@ -11,9 +11,11 @@ plt.rcParams.update({
 
 
 df5 = pd.read_csv("experiments/dilate/data/direct_psnr_test.csv")
+tdf5 = pd.read_csv("experiments/dilate/data/type_psnr_test3.csv")
 idf5 = pd.read_csv("experiments/dilate/data/indirect_psnr_test.csv")
 
 df5["model"]  = "D"
+tdf5["model"] = "T"
 idf5["model"] = "I"
 
 bmidnight = (0, .329, .576)
@@ -21,11 +23,12 @@ bcayenne = (.8, 0, .14)
 
 palette = {
     "D": bmidnight,
+    "T": "olivedrab",
     "I": bcayenne
 }
-hue_order = ["D", "I"]
+hue_order = ["D", "T", "I"]
 
-sns.set_theme(style="white",     
+sns.set_theme(style="white",
               font="Futura",
               rc={
                 "font.weight": "bold",
@@ -33,7 +36,7 @@ sns.set_theme(style="white",
                 "ytick.labelsize": 15})
 
 # ── 2. concatenate ───────────────────────────────────
-big = pd.concat([df5, idf5], ignore_index=True)
+big = pd.concat([df5, tdf5, idf5], ignore_index=True)
 
 g = sns.relplot(
     data=big,
@@ -41,16 +44,21 @@ g = sns.relplot(
     x="step", y="psnr",
     col="batch size",
     row="lr",
+    alpha=.7,
     hue="model",
+    style="model", 
+    style_order=hue_order,
+    dashes=[[], (3, 2,1,2), (1, 1)],
+    units="seed",
     hue_order=hue_order,
     palette=palette, 
-    estimator="mean",           # center = mean
-    errorbar=("pi", 95),        # ribbon = 5–95% percentile interval (asymmetric)
+    estimator=None,
+    # errorbar=("pi", 95),
     facet_kws=dict(sharex="col", sharey=True),
     height=2.8, aspect=1.2
 )
 
-g.set(ylim=(13, 25))
+g.set(ylim=(13, 23))
 # g.set(xlim=(20, None))
 
 g.set_axis_labels("step", "PSNR")
