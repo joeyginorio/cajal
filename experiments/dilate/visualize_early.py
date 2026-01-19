@@ -18,10 +18,10 @@ bcayenne = (.8, 0, .14)
 # df4 = pd.read_csv("experiments/dilate/data/direct_output_test.csv")
 # df5 = pd.read_csv("experiments/dilate/data/direct_psnr_test.csv")
 
-# tdf1 = pd.read_csv("experiments/dilate/data/type_loss_train2.csv")
-# tdf2 = pd.read_csv("experiments/dilate/data/type_loss_test2.csv")
-# tdf4 = pd.read_csv("experiments/dilate/data/type_output_test2.csv")
-# tdf5 = pd.read_csv("experiments/dilate/data/type_psnr_test2.csv")
+# tdf1 = pd.read_csv("experiments/dilate/data/type_loss_train.csv")
+# tdf2 = pd.read_csv("experiments/dilate/data/type_loss_test.csv")
+# tdf4 = pd.read_csv("experiments/dilate/data/type_output_test.csv")
+# tdf5 = pd.read_csv("experiments/dilate/data/type_psnr_test.csv")
 
 # idf1 = pd.read_csv("experiments/dilate/data/indirect_loss_train.csv")
 # idf2 = pd.read_csv("experiments/dilate/data/indirect_loss_test.csv")
@@ -476,7 +476,7 @@ sns.lineplot(
 
 axes[5].legend(loc=1,fontsize=12)
 axes[5].set_xlim(0, xlim)           # show just the first 500 updates
-axes[5].set_ylim(10, 17)           # show just the first 500 updates
+axes[5].set_ylim(5, 17)           # show just the first 500 updates
 axes[5].set(
     xlabel="Steps",
     ylabel="PSNR"

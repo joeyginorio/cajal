@@ -9,13 +9,13 @@ plt.rcParams.update({
 })
 
 df5 = pd.read_csv("experiments/and/data/direct_and_acc_test.csv")
-# idf5 = pd.read_csv("experiments/and/data/indirect_and_acc_test.csv")
+idf5 = pd.read_csv("experiments/and/data/indirect_and_acc_test.csv")
 tdf5 = pd.read_csv("experiments/and/data/type_and_acc_test.csv")
-rdf5 = pd.read_csv("experiments/and/data/church_and_acc_test.csv")
+# rdf5 = pd.read_csv("experiments/and/data/church_and_acc_test.csv")
 
 df5["model"]  = "D"
-# idf5["model"] = "I"
-rdf5["model"] = "C"
+idf5["model"] = "I"
+# rdf5["model"] = "C"
 tdf5["model"] = "T"
 
 bmidnight = (0, .329, .576)
@@ -25,11 +25,11 @@ green = (0, 0.5, 0)
 
 palette = {
     "D":   bmidnight,      # bmidnight
-    # "I": bcayenne,       # bcayenne
-    "C": purple,
+    "I": bcayenne,       # bcayenne
+    # "C": purple,
     "T": green
 }
-hue_order = ["D", "C", "T"]
+hue_order = ["D", "T", "I"]
 
 sns.set_theme(style="white",
               font="Futura",
@@ -39,19 +39,24 @@ sns.set_theme(style="white",
                 "ytick.labelsize": 15})
 
 # ── 2. concatenate ───────────────────────────────────
-big = pd.concat([df5, tdf5, rdf5], ignore_index=True)
+big = pd.concat([df5, tdf5, idf5], ignore_index=True)
 
 g = sns.relplot(
     data=big,
     kind="line",
     x="step", y="acc",
-    col="batch size",           # share x-axis within each batch-size column
+    col="batch size",
     row="lr",
+    alpha=.7,
     hue="model",
+    style="model", 
+    style_order=hue_order,
+    dashes=[[], (3, 2,1,2), (1, 1)],
+    units="seed",
     hue_order=hue_order,
     palette=palette, 
-    estimator="mean",           # average over seeds
-    ci="sd",
+    estimator=None,
+    # errorbar=("pi", 95),
     facet_kws=dict(sharex="col", sharey=True),
     height=2.8, aspect=1.2
 )

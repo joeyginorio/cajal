@@ -11,7 +11,7 @@ plt.rcParams.update({
 
 
 df5 = pd.read_csv("experiments/dilate/data/direct_psnr_test.csv")
-tdf5 = pd.read_csv("experiments/dilate/data/type_psnr_test3.csv")
+tdf5 = pd.read_csv("experiments/dilate/data/type_psnr_test.csv")
 idf5 = pd.read_csv("experiments/dilate/data/indirect_psnr_test.csv")
 
 df5["model"]  = "D"
@@ -58,7 +58,7 @@ g = sns.relplot(
     height=2.8, aspect=1.2
 )
 
-g.set(ylim=(13, 23))
+g.set(ylim=(13, 24))
 # g.set(xlim=(20, None))
 
 g.set_axis_labels("step", "PSNR")

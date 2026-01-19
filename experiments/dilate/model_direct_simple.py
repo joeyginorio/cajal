@@ -34,13 +34,6 @@ test_ys = torch.load("experiments/dilate/data/test_ys.pt")
 train_ds = TensorDataset(train_xs, train_ys)
 test_ds = TensorDataset(test_xs, test_ys)
 
-def myconv(x_i, w_i):
-    x_i = x_i.unsqueeze(0) 
-    y_i = F.conv2d(x_i, w_i, padding=2)
-    return y_i.squeeze(0)
-
-batched_myconv = torch.vmap(myconv)
-
 # ---------- Model -------------------
 class ModelD(nn.Module):
     def __init__(self):
@@ -56,28 +49,48 @@ class ModelD(nn.Module):
             nn.ReLU(),
             nn.MaxPool2d(3),
             nn.Flatten(),
-            nn.Linear(16*9*9,10)
+            nn.Linear(16*9*9,10), # B x 10
         )
 
-        self.random_iter = nn.Sequential(
-            nn.Linear(7840,784)
-        )
+        self.lconv = nn.Conv2d(1,1,13)
+
+        self.p = cj.TmIter(cj.TmVar('base'), 
+                           'y', 
+                           cj.TmApp(cj.TmVar('iterator'), cj.TmVar('y')),
+                           cj.TmVar('num'))
+
+        self.p = torch.vmap(compile(self.p),
+                            in_dims=({'base': (TypedTensor(0, None)),
+                                      'iterator': None,
+                                      'num': (TypedTensor(0, None))},),
+                                      out_dims=TypedTensor(0, None))
+
 
     def forward(self, x):
-        base_val = x.view(-1,784) # Bx28x28
+        base_val = x # Bx28x28
         num_val = self.determine_n(x) # Bx10
-        ys = torch.vmap(torch.kron)(base_val, num_val)
-        return self.random_iter(ys).view(-1,28,28)
+
+        def iterator(t):
+            xd = t.data.view(-1, 1, 28, 28)             # (B_in, Cin=1, H, W)
+            xd = F.pad(xd, (6, 6, 6, 6), mode='constant', value=-1.0)
+            y = self.lconv(xd)
+            return TypedTensor(y, cj.TyBool())
+
+        env = {'base' : TypedTensor(base_val, cj.TyBool()),
+               'iterator' : iterator,
+               'num' : TypedTensor(num_val, cj.TyNat())}
+        return self.p(env).data.view(-1,28,28)
+    
 
 
 # ---------- Training ----------------
+# seeds = [0]
 # seeds = [0,1,2]
-# seeds = [0,1,2,3,4,5,6,7,8,9]
-seeds = [0]
-batch_sizes = [32,64,128]
+seeds = [0,1,2,3,4,5,6,7,8,9]
 # batch_sizes = [32]
+batch_sizes = [32,64,128]
+# learning_rates = [.0001]
 learning_rates = [.001, .0005, .0001]
-# learning_rates = [.001]
 idxs = list(range(20))
 
 # # CNN measurements
@@ -202,22 +215,22 @@ for seed in seeds:
 
 
 
-with open("experiments/dilate/data/type_loss_train.csv", "w", newline="") as f:
+with open("experiments/dilate/data/direct_simple_loss_train.csv", "w", newline="") as f:
     writer = csv.writer(f)
     writer.writerow(["step", "seed", "batch size", "lr", "loss"])
     for (step, seed, batch_size, lr), loss in loss_train.items():
         writer.writerow([step, seed, batch_size, lr, loss])
-with open("experiments/dilate/data/type_loss_test.csv", "w", newline="") as f:
+with open("experiments/dilate/data/direct_simple_loss_test.csv", "w", newline="") as f:
     writer = csv.writer(f)
     writer.writerow(["step", "seed", "batch size", "lr", "loss"])
     for (step, seed, batch_size, lr), loss in loss_test.items():
         writer.writerow([step, seed, batch_size, lr, loss])
-with open("experiments/dilate/data/type_output_test.csv", "w", newline="") as f:
+with open("experiments/dilate/data/direct_simple_output_test.csv", "w", newline="") as f:
     writer = csv.writer(f)
     writer.writerow(["step", "seed", "batch size", "lr", "idx", "output"])
     for (step, seed, batch_size, lr, idx), output in output_test.items():
         writer.writerow([step, seed, batch_size, lr, idx, output])
-with open("experiments/dilate/data/type_psnr_test.csv", "w", newline="") as f:
+with open("experiments/dilate/data/direct_simple_psnr_test.csv", "w", newline="") as f:
     writer = csv.writer(f)
     writer.writerow(["step", "seed", "batch size", "lr", "idx", "psnr"])
     for (step, seed, batch_size, lr), snr in psnr_test.items():

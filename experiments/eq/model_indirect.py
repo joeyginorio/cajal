@@ -1,7 +1,11 @@
 import torch
 import random
 import csv
+from cajal.compiling import compile, TypedTensor
+from cajal.typing import check
+import cajal.syntax as cj
 from torch import nn, optim
+from torch import vmap
 from torch.utils.data import DataLoader, TensorDataset
 
 # ---------- Device ------------------
@@ -14,13 +18,13 @@ else:
 print(f"Using device: {device}")
 
 # ---------- Data --------------------
-train_xs1 = torch.load("experiments/and/data/train_and_xs1.pt")
-train_xs2 = torch.load("experiments/and/data/train_and_xs2.pt")
-train_ys = torch.load("experiments/and/data/train_and_ys.pt")
+train_xs1 = torch.load("experiments/eq/data/train_eq_xs1.pt")
+train_xs2 = torch.load("experiments/eq/data/train_eq_xs2.pt")
+train_ys = torch.load("experiments/eq/data/train_eq_ys.pt")
 
-test_xs1 = torch.load("experiments/and/data/test_and_xs1.pt")
-test_xs2 = torch.load("experiments/and/data/test_and_xs2.pt")
-test_ys = torch.load("experiments/and/data/test_and_ys.pt")
+test_xs1 = torch.load("experiments/eq/data/test_eq_xs1.pt")
+test_xs2 = torch.load("experiments/eq/data/test_eq_xs2.pt")
+test_ys = torch.load("experiments/eq/data/test_eq_ys.pt")
 
 train_ds = TensorDataset(train_xs1, train_xs2, train_ys)
 test_ds = TensorDataset(test_xs1, test_xs2, test_ys)
@@ -30,28 +34,18 @@ test_ds = TensorDataset(test_xs1, test_xs2, test_ys)
 class ModelD(nn.Module):
     def __init__(self):
         super().__init__()
-        self.netx1 = nn.Sequential(
+        self.net = nn.Sequential(
             nn.Flatten(),
-            nn.Linear(28 * 28, 400),
+            nn.Linear(28 * 28 * 2, 400),
             nn.ReLU(),
             nn.Linear(400, 2)
-        )
-        self.netx2 = nn.Sequential(
-            nn.Flatten(),
-            nn.Linear(28 * 28, 400),
-            nn.ReLU(),
-            nn.Linear(400, 2)
-        )
-
-        self.random_ite = nn.Sequential(
-            nn.Linear(4,2)
         )
 
     def forward(self, x1, x2):
-        y1 = self.netx1(x1)
-        y2 = self.netx2(x2)
-        ys = torch.vmap(torch.kron)(y1,y2)
-        return self.random_ite(ys)
+        x1 = x1.view(x1.size(0), -1)
+        x2 = x2.view(x2.size(0), -1)
+        x = torch.cat((x1, x2), dim=1)
+        return self.net(x)
 
 # ---------- Training ----------------
 seeds = [0,1,2,3,4,5,6,7,8,9]
@@ -59,8 +53,6 @@ seeds = [0,1,2,3,4,5,6,7,8,9]
 batch_sizes = [64,128,256]
 # batch_sizes = [512]
 learning_rates = [.001, .0001, .00001]
-# learning_rates = [.001]
-
 test_loader = DataLoader(test_ds, batch_size=2048, shuffle=False)
 loss_train = {}
 loss_test = {}
@@ -142,30 +134,18 @@ for seed in seeds:
                         acc[(step, seed, batch_size, lr)] = accuracy
 
 
-
-with open("experiments/and/data/type_and_loss_train.csv", "w", newline="") as f:
+with open("experiments/eq/data/indirect_eq_loss_train.csv", "w", newline="") as f:
     writer = csv.writer(f)
     writer.writerow(["step", "seed", "batch size", "lr", "loss"])
     for (step, seed, batch_size, lr), loss in loss_train.items():
         writer.writerow([step, seed, batch_size, lr, loss])
-with open("experiments/and/data/type_and_loss_test.csv", "w", newline="") as f:
+with open("experiments/eq/data/indirect_eq_loss_test.csv", "w", newline="") as f:
     writer = csv.writer(f)
     writer.writerow(["step", "seed", "batch size", "lr", "loss"])
     for (step, seed, batch_size, lr), loss in loss_test.items():
         writer.writerow([step, seed, batch_size, lr, loss])
-with open("experiments/and/data/type_and_acc_test.csv", "w", newline="") as f:
+with open("experiments/eq/data/indirect_eq_acc_test.csv", "w", newline="") as f:
     writer = csv.writer(f)
     writer.writerow(["step", "seed", "batch size", "lr", "acc"])
     for (step, seed, batch_size, lr), acc in acc.items():
         writer.writerow([step, seed, batch_size, lr, acc])
-
-
-# df = pd.read_csv("data/type_and_acc_test.csv")
-# plt.figure(figsize=(8, 5))
-# sns.lineplot(data=df, x="step", y="acc")
-# plt.xlabel("Training Step")
-# plt.ylabel("Accuracy")
-# plt.title("Test Accuracy vs. Training Steps")
-# plt.grid(True)
-# plt.tight_layout()
-# plt.show()

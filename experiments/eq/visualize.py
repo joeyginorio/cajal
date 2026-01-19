@@ -9,12 +9,12 @@ plt.rcParams.update({
 })
 
 df5 = pd.read_csv("experiments/eq/data/direct_eq_acc_test.csv")
-# idf5 = pd.read_csv("experiments/eq/data/indirect_eq_acc_test.csv")
+idf5 = pd.read_csv("experiments/eq/data/indirect_eq_acc_test.csv")
 tdf5 = pd.read_csv("experiments/eq/data/type_eq_acc_test.csv")
 # rdf5 = pd.read_csv("experiments/eq/data/church_eq_acc_test.csv")
 
 df5["model"]  = "D"
-# idf5["model"] = "I"
+idf5["model"] = "I"
 # rdf5["model"] = "C"
 tdf5["model"] = "T"
 
@@ -25,11 +25,11 @@ green = (0, 0.5, 0)
 
 palette = {
     "D":   bmidnight,      # bmidnight
-    # "I": bcayenne,       # bcayenne
+    "I": bcayenne,       # bcayenne
     # "C": purple,
     "T": green
 }
-hue_order = ["D", "T"]
+hue_order = ["D", "T", "I"]
 
 sns.set_theme(style="white",
               font="Futura",
@@ -39,19 +39,24 @@ sns.set_theme(style="white",
                 "ytick.labelsize": 15})
 
 # ── 2. concatenate ───────────────────────────────────
-big = pd.concat([df5, tdf5], ignore_index=True)
+big = pd.concat([df5, tdf5, idf5], ignore_index=True)
 
 g = sns.relplot(
     data=big,
     kind="line",
     x="step", y="acc",
-    col="batch size",           # share x-axis within each batch-size column
+    col="batch size",
     row="lr",
+    alpha=.7,
     hue="model",
+    style="model", 
+    style_order=hue_order,
+    dashes=[[], (3, 2,1,2), (1, 1)],
+    units="seed",
     hue_order=hue_order,
     palette=palette, 
-    estimator="mean",           # average over seeds
-    ci="sd",
+    estimator=None,
+    # errorbar=("pi", 95),
     facet_kws=dict(sharex="col", sharey=True),
     height=2.8, aspect=1.2
 )
@@ -97,7 +102,7 @@ for r, lr_val in enumerate(g.row_names):             # rows = learning rates
 
 for ax_row in g.axes:
     for ax in ax_row:
-        ax.set_ylim(0.5, 1.0)
+        ax.set_ylim(0.45, 1.0)
 
 g.set_axis_labels("", "")        # wipes the “step” / “PSNR” strings
 g.fig.supxlabel("Steps",  y=-0.01, fontsize=24, fontweight="bold")      # global x-axis label

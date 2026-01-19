@@ -30,28 +30,18 @@ test_ds = TensorDataset(test_xs1, test_xs2, test_ys)
 class ModelD(nn.Module):
     def __init__(self):
         super().__init__()
-        self.netx1 = nn.Sequential(
+        self.net = nn.Sequential(
             nn.Flatten(),
-            nn.Linear(28 * 28, 400),
+            nn.Linear(28 * 28 * 2, 400),
             nn.ReLU(),
             nn.Linear(400, 2)
-        )
-        self.netx2 = nn.Sequential(
-            nn.Flatten(),
-            nn.Linear(28 * 28, 400),
-            nn.ReLU(),
-            nn.Linear(400, 2)
-        )
-
-        self.random_ite = nn.Sequential(
-            nn.Linear(4,2)
         )
 
     def forward(self, x1, x2):
-        y1 = self.netx1(x1)
-        y2 = self.netx2(x2)
-        ys = torch.vmap(torch.kron)(y1,y2)
-        return self.random_ite(ys)
+        x1 = x1.view(x1.size(0), -1)
+        x2 = x2.view(x2.size(0), -1)
+        x = torch.cat((x1, x2), dim=1)
+        return self.net(x)
 
 # ---------- Training ----------------
 seeds = [0,1,2,3,4,5,6,7,8,9]
@@ -143,24 +133,24 @@ for seed in seeds:
 
 
 
-with open("experiments/and/data/type_and_loss_train.csv", "w", newline="") as f:
+with open("experiments/and/data/indirect_and_loss_train.csv", "w", newline="") as f:
     writer = csv.writer(f)
     writer.writerow(["step", "seed", "batch size", "lr", "loss"])
     for (step, seed, batch_size, lr), loss in loss_train.items():
         writer.writerow([step, seed, batch_size, lr, loss])
-with open("experiments/and/data/type_and_loss_test.csv", "w", newline="") as f:
+with open("experiments/and/data/indirect_and_loss_test.csv", "w", newline="") as f:
     writer = csv.writer(f)
     writer.writerow(["step", "seed", "batch size", "lr", "loss"])
     for (step, seed, batch_size, lr), loss in loss_test.items():
         writer.writerow([step, seed, batch_size, lr, loss])
-with open("experiments/and/data/type_and_acc_test.csv", "w", newline="") as f:
+with open("experiments/and/data/indirect_and_acc_test.csv", "w", newline="") as f:
     writer = csv.writer(f)
     writer.writerow(["step", "seed", "batch size", "lr", "acc"])
     for (step, seed, batch_size, lr), acc in acc.items():
         writer.writerow([step, seed, batch_size, lr, acc])
 
 
-# df = pd.read_csv("data/type_and_acc_test.csv")
+# df = pd.read_csv("data/indirect_and_acc_test.csv")
 # plt.figure(figsize=(8, 5))
 # sns.lineplot(data=df, x="step", y="acc")
 # plt.xlabel("Training Step")

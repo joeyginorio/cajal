@@ -62,13 +62,11 @@ class ModelD(nn.Module):
         return ceq_compiled(env).data
 
 # ---------- Training ----------------
-seeds = [0,1,2,3,4]
+seeds = [0,1,2,3,4,5,6,7,8,9]
 # seeds = [0]
-batch_sizes = [64,128,256,512]
+batch_sizes = [64,128,256]
 # batch_sizes = [512]
-learning_rates = [.01, .001, .0001, .00001]
-# learning_rates = [.001]
-
+learning_rates = [.001, .0001, .00001]
 test_loader = DataLoader(test_ds, batch_size=2048, shuffle=False)
 loss_train = {}
 loss_test = {}
