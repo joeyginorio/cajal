@@ -1,6 +1,17 @@
 [project]
 name = "cajal"
 version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "torch>=2.8",
+    "numpy",
+    "matplotlib",
+    "seaborn",
+    "pandas",
+    "kornia",
+    "pillow",
+    "jupyter",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]
